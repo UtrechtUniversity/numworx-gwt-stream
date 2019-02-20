@@ -52,7 +52,7 @@ gap =
 arrow : Collage msg
 arrow =
     vertical
-        [ line (unit * 3)
+        [ line (unit * 2.5)
             |> traced defaultLineStyle
             |> rotate (pi / 2)
         , arrowTriangle
@@ -745,7 +745,7 @@ addHitbox highlightedBox id nodeBox =
                 |> onMouseLeave
                     (always (DehighlightBox id))
     in
-    impose nodeBox hitbox |> trigger
+    impose (trigger hitbox) nodeBox
 
 
 addOverlayMenu : Maybe Id -> Tree -> Collage Msg -> Collage Msg
