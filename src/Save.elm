@@ -11,10 +11,9 @@ module Save exposing (..)
 
 import Base64 exposing (decode)
 import Debug exposing (log)
-import Html exposing (..)
-import Html.Attributes exposing (class, href, id, placeholder, style, type_)
-import Html.Events exposing (on, onClick, onInput)
--- import Http exposing (encodeUri)
+import Html.Styled exposing (Html, div, text, button, input, a, br)
+import Html.Styled.Attributes exposing (class, href, id, placeholder, style, type_, autofocus)
+import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as Decode exposing(..)
 import Json.Encode as Encode exposing(..)
 import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
@@ -92,7 +91,7 @@ subscriptions model =
 --}
 
 
-view : Model -> List (Html.Attribute Msg) -> Html Msg
+view : Model -> List (Html.Styled.Attribute Msg) -> Html Msg
 view model layout =
     div layout
         [ namingField model.flowchartName
@@ -106,7 +105,8 @@ view model layout =
 namingField : String -> Html Msg
 namingField flowchartName =
     input
-        [ Html.Attributes.autofocus True
+        [
+        autofocus True
         , placeholder flowchartName
         , onInput UpdateName
         ]

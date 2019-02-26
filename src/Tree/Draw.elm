@@ -12,9 +12,10 @@ import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text as Text exposing (Shape(..), Text, fromString, weight)
 import Color exposing (Color, rgb, rgba, black, blue, darkGray, red, white)
-import Html exposing (..)
-import Html.Attributes exposing (cols, maxlength, placeholder, rows, style, type_, wrap)
-import Html.Events exposing (onInput)
+import Css exposing (overflow, auto, pct, fontFamilies, backgroundColor, borderColor, textAlign, resize)
+import Html.Styled exposing (Html, textarea, div, input, fromUnstyled, toUnstyled)
+import Html.Styled.Attributes exposing (css, cols, maxlength, placeholder, rows, style, type_, wrap, value)
+import Html.Styled.Events exposing (onInput)
 import Json.Decode as Json exposing (map)
 import Tree.Core exposing (..)
 import Tree.State exposing (..)
@@ -83,12 +84,6 @@ labelText string =
         |> rendered
 
 
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
-    -- Needed for catching an "enter"/"return" to defocus
-    Html.Events.on "keydown" (Json.map tagger Html.Events.keyCode)
-
-
 textBox : Id -> FillEmpty -> String -> Int -> Html Msg
 textBox id newNodeType label maxCharacters =
     let
@@ -110,18 +105,15 @@ textBox id newNodeType label maxCharacters =
         [ placeholder placeholderLabel
         , maxlength <| max maxCharacters <| String.length label
         , onInput (UpdateContent id)
-        , Html.Attributes.id <| String.fromInt id
-        , onKeyDown <| KeyDown <| String.fromInt id
-        , Html.Attributes.value label
-
-        --, Html.Attributes.autofocus True
-        , style "width" "100%"
-
-            -- , ( "font-family", "'monaco', 'monofur', monospace" )
-            -- , ( "background-color" "rgba(0, 0, 0, 0)" )
-            -- , ( "border-color" "rgba(0, 0, 0, 0)" )
-            -- , ( "text-align" "center" )
-            -- ]
+        , Html.Styled.Attributes.id <| String.fromInt id
+        -- , KeyDown <| String.fromInt id
+        , value label
+        , css [ Css.width (pct 100)
+              , fontFamilies ["monaco", "monofur", "monospace"]
+              , backgroundColor (Css.rgba 0 0 0 0)
+              , borderColor (Css.rgba 0 0 0 0)
+              , textAlign Css.center
+              ]
         ]
         []
 
@@ -231,12 +223,6 @@ statementBoxShape w =
 
 
 
-{--
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
-    on "keydown" (Json.map tagger keyCode)
---}
-
 
 statementBoxEditable : Id -> String -> Collage Msg
 statementBoxEditable id label =
@@ -246,7 +232,7 @@ statementBoxEditable id label =
 
         htmlBox =
             html ( w, h ) <|
-                textBox id AddStatement label 22
+                toUnstyled(textBox id AddStatement label 22)
     in
     [ htmlBox
     , statementBoxShape w
@@ -289,7 +275,7 @@ ifBoxEditable id label =
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                textBox id AddIf label maxCharacters
+                toUnstyled(textBox id AddIf label maxCharacters)
     in
     stack
         [ htmlBox
@@ -406,7 +392,7 @@ whileBoxEditable id label =
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                textBox id AddWhile label maxCharacters
+                toUnstyled(textBox id AddWhile label maxCharacters)
     in
     [ htmlBox
     , whileBoxShape w
@@ -447,7 +433,7 @@ forEachBoxEditable id label =
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                textBox id AddForEach label maxCharacters
+                toUnstyled(textBox id AddForEach label maxCharacters)
     in
     [ htmlBox
     , forEachBoxShape w
@@ -769,23 +755,18 @@ addOverlayMenu highlightedBox node nodeBox =
 
 multilineEditableTextBox : ConditionType -> String -> Html Msg
 multilineEditableTextBox conditionType label =
-    let
-        styling =
-            style "overflow" "auto"
-                -- [ ( "overflow", "auto" )
-                -- , ( "resize", "none" )
-                -- , ( "font-family", "'monaco', 'monofur', monospace" )
-                -- , ( "background-color", "rgba(0, 0, 0, 0)" )
-                -- , ( "border-color", "rgba(0, 0, 0, 0)" )
-                -- ]
-    in
     textarea
-        [ wrap "hard"
+       [ wrap "hard"
         , cols 30
         , rows 4
-        , styling
+        , css [overflow auto
+              , resize Css.none
+              , fontFamilies ["monaco", "monofur", "monospace"]
+              , backgroundColor (Css.rgba 0  0  0  0)
+              , borderColor (Css.rgba 0 0 0 0)
+              ]
         , placeholder <| Debug.toString conditionType
-        , Html.Attributes.value label
+        , value label
         , onInput <| UpdateCondition conditionType
         ]
         []
@@ -835,7 +816,7 @@ noteBox conditionType label =
             multilineEditableTextBox conditionType label
 
         text =
-            html ( w * 2 - unit * 2, h * 2 - unit * 3.5 ) htmlText
+            html ( w * 2 - unit * 2, h * 2 - unit * 3.5 ) (toUnstyled htmlText)
                 |> align topLeft
     in
     shape
@@ -885,12 +866,13 @@ completeTree model =
             |> at right gap
 
 
-treeWithConditions : Model -> List (Html.Attribute Msg) -> Html Msg
+treeWithConditions : Model -> List (Html.Styled.Attribute Msg) -> Html Msg
 treeWithConditions model msgAttributeHtmlList =
     div msgAttributeHtmlList
       [ completeTree model
                   |> addConditions model
                   |> svg
+                  |> fromUnstyled
 
                     --, text ("Debug info, model.tree: " ++ toStringRec model.tree)
                   ]

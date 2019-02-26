@@ -7,9 +7,11 @@ module Main exposing (..)
 --}
 
 import Browser exposing (element)
-import Html exposing (..)
-import Html.Attributes exposing (style)
-import Html.Events exposing (onClick)
+import Css exposing (..)
+import Html
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (css)
+import Html.Styled.Events exposing (onClick)
 import Save exposing (..)
 import Tree.Draw as Draw exposing (..)
 import Tree.State as State exposing (..)
@@ -73,26 +75,39 @@ subscriptions model =
     Sub.map Save (Save.subscriptions model.tree)
 
 
-view : Model -> Html Msg
+view : Model -> Html.Html Msg
 view model =
     let
-        saveLayout =
-            style "position" "absolute"--[ ( "position", "absolute" ), ( "height", "100%" ), ( "top", "25px" ), ( "left", "10px" ), ( "z-index", "10" ) ]
+        saveLayout = css [ position absolute
+                         , height (pct 100)
+                         , top (px 25)
+                         , left (px 10)
+                         , zIndex (int 10)
+                         ]
 
-        treeLayout =
-            style "position" "absolute" --[ ( "position", "absolute" ), ( "top", "25px" ), ( "height", "100%" ), ( "left", Debug.toString (offsetLeft model.tree) ++ "px" ), ( "z-index", "0" ) ]
+        treeLayout = css [ position absolute
+                         , top (px 25)
+                         , height (pct 100)
+                         , left (px (offsetLeft model.tree))
+                         , zIndex (int 0)
+                         ]
     in
-    div [ style "overflow-y" "auto" ] --), ( "height", "100%" ) ] ]
+    div [ css [overflowY auto] ] --), ( "height", "100%" ) ] ]
         [ div
-            [ style "position" "absolute"]--[ ( "position", "absolute" ), ( "margin-right", "10px" ), ( "top", "20px" ), ( "background-color", "#e62272" ), ( "z-index", "-1" ) ] ]
-            [ Html.map Save
+            [ css [ position absolute
+                  , marginRight (px 10)
+                  , top (px 20)
+                  , zIndex (int -1)
+                  ]
+            ]
+            [ map Save
                 (Save.view model.tree [ saveLayout ])
-            , Html.map Tree
+            , map Tree
                 (Draw.treeWithConditions model.tree [ treeLayout ])
             ]
 
         --, jsonDebug model
-        ]
+        ] |> toUnstyled
 
 
 -- jsonDebug : Model -> Html Msg
