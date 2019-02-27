@@ -31,7 +31,10 @@ imposeAt anchor fore back =
         )
         back
 
-
+imposePrime : Collage msg -> Collage msg -> Collage msg
+imposePrime front back =
+    -- modification to "Collage.Layout.at" for the hitbox. Fronts outline is used, and it is not overshadowed by the hitbox
+    stack[front, impose back front]
 
 {--
 
@@ -731,7 +734,7 @@ addHitbox highlightedBox id nodeBox =
                 |> onMouseLeave
                     (always (DehighlightBox id))
     in
-    impose (trigger hitbox) nodeBox
+    imposePrime (trigger nodeBox) (trigger hitbox)
 
 
 addOverlayMenu : Maybe Id -> Tree -> Collage Msg -> Collage Msg
