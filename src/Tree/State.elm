@@ -7,8 +7,8 @@ module Tree.State exposing (ChangeTree(..), ConditionType(..), FillEmpty(..), Mo
 
 --}
 
+import Browser.Dom exposing (Error, blur)
 import Debug exposing (log)
-import Browser.Dom exposing (blur, Error)
 import Task exposing (attempt)
 import Tree.Core exposing (..)
 
@@ -103,6 +103,7 @@ type ConditionType
     = Precondition
     | Postcondition
 
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -147,6 +148,7 @@ update msg model =
                 , --Debug.log "Our dark magic is summoned upon!" <|
                   attempt BlurResult (blur domId)
                 )
+
             else
                 ( model, Cmd.none )
 
@@ -197,10 +199,11 @@ updateContent newContent idToFind node =
                     ForEach newContent child1 child2
 
                 a ->
-                    Debug.log("Tried to update content of non-content node" ++ Debug.toString a ++ " With Id: " ++ String.fromInt node.id ++ " instead doing nothing.") Void
+                    Debug.log ("Tried to update content of non-content node" ++ Debug.toString a ++ " With Id: " ++ String.fromInt node.id ++ " instead doing nothing.") Void
     in
     if node.id == idToFind then
         { id = node.id, basicTree = helper node }
+
     else
         continueRecursion (updateContent newContent idToFind) node
 
@@ -263,10 +266,11 @@ fillEmpty currentId newNodeType idToFind node =
                     onTheRightEmptyNode child
 
                 a ->
-                  Debug.log ("Inserting something on non-Empty node " ++ Debug.toString a ++ " with id: " ++ String.fromInt node.id ++ " instead doing nothing.") currentNode
+                    Debug.log ("Inserting something on non-Empty node " ++ Debug.toString a ++ " with id: " ++ String.fromInt node.id ++ " instead doing nothing.") currentNode
     in
     if node.id == idToFind then
         { node | basicTree = helper node.basicTree }
+
     else
         continueRecursion
             (fillEmpty currentId newNodeType idToFind)
@@ -304,6 +308,7 @@ changeTree currentId operation idToFind node =
     in
     if node.id == idToFind then
         onTheRightNode node
+
     else
         continueRecursion (changeTree currentId operation idToFind) node
 
@@ -312,10 +317,10 @@ newAbove : Id -> Tree -> Tree
 newAbove currentId node =
     case node.basicTree of
         Start child ->
-            Debug.log ("Tried to add an element before Start. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") {id= -2, basicTree = Start child}
+            Debug.log ("Tried to add an element before Start. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") { id = -2, basicTree = Start child }
 
         Void ->
-            Debug.log ("Tried to add an element before Void. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") {id = -3, basicTree = Void}
+            Debug.log ("Tried to add an element before Void. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") { id = -3, basicTree = Void }
 
         _ ->
             { id = currentId, basicTree = Empty node }
@@ -331,7 +336,7 @@ newBelow currentId currentNode =
                 }
 
         End ->
-            Debug.log  ("Tried to add an element below End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") End
+            Debug.log ("Tried to add an element below End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") End
 
         Empty child ->
             Empty
@@ -349,7 +354,8 @@ newBelow currentId currentNode =
                 }
 
         a ->
-            Debug.log  ("Tried to add an element below IfElse, While or ForEach. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") a
+            Debug.log ("Tried to add an element below IfElse, While or ForEach. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") a
+
 
 newTrue : Id -> Tree -> BasicTree
 newTrue currentId currentNode =
@@ -399,16 +405,16 @@ delete : Tree -> Tree
 delete currentNode =
     case currentNode.basicTree of
         Start child ->
-            Debug.log ("Tried to delete Start. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") {id = -2, basicTree = Start child}
+            Debug.log ("Tried to delete Start. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") { id = -2, basicTree = Start child }
 
         End ->
-            Debug.log ("Tried to delete End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") {id = -3, basicTree = End}
+            Debug.log ("Tried to delete End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") { id = -3, basicTree = End }
 
         Empty child ->
             child
 
         Void ->
-            Debug.log ("Tried to delete Void. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") {id = -4, basicTree = Void}
+            Debug.log ("Tried to delete Void. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") { id = -4, basicTree = Void }
 
         Statement content child ->
             child
@@ -437,6 +443,7 @@ highlightBox newId currentId =
         Just id ->
             if newId == id then
                 Nothing
+
             else
                 Just newId
 
@@ -450,6 +457,7 @@ dehighlightBox oldId currentId =
         Just id ->
             if oldId == id then
                 Nothing
+
             else
                 Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ " while the highlightedBox was " ++ String.fromInt id) Nothing
 

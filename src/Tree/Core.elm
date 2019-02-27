@@ -1,4 +1,4 @@
-module Tree.Core exposing (..)
+module Tree.Core exposing (BasicTree(..), Content, Id, Tree, continueRecursion, toJavaComment, toStringRec)
 
 {--
 

@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (Model, Msg(..), init, main, subscriptions, update, view)
 
 {--
 
@@ -40,7 +40,10 @@ init _ =
 type Msg
     = Tree State.Msg
     | Save Save.Msg
-    -- | GenerateJsonDebug
+
+
+
+-- | GenerateJsonDebug
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -64,10 +67,12 @@ update msg model =
             , Cmd.map Save saveCmd
             )
 
-        -- GenerateJsonDebug ->
-        --     ( { model | jsonDebugView = Just (Save.debug model.tree) }
-        --     , Cmd.none
-        --     )
+
+
+-- GenerateJsonDebug ->
+--     ( { model | jsonDebugView = Just (Save.debug model.tree) }
+--     , Cmd.none
+--     )
 
 
 subscriptions : Model -> Sub Msg
@@ -78,27 +83,33 @@ subscriptions model =
 view : Model -> Html.Html Msg
 view model =
     let
-        saveLayout = css [ position absolute
-                         , height (pct 100)
-                         , top (px 25)
-                         , left (px 10)
-                         , zIndex (int 10)
-                         ]
+        saveLayout =
+            css
+                [ position absolute
+                , height (pct 100)
+                , top (px 25)
+                , left (px 10)
+                , zIndex (int 10)
+                ]
 
-        treeLayout = css [ position absolute
-                         , top (px 25)
-                         , height (pct 100)
-                         , left (px (offsetLeft model.tree))
-                         , zIndex (int 0)
-                         ]
+        treeLayout =
+            css
+                [ position absolute
+                , top (px 25)
+                , height (pct 100)
+                , left (px (offsetLeft model.tree))
+                , zIndex (int 0)
+                ]
     in
-    div [ css [overflowY auto] ] --), ( "height", "100%" ) ] ]
+    div [ css [ overflowY auto ] ]
+        --), ( "height", "100%" ) ] ]
         [ div
-            [ css [ position absolute
-                  , marginRight (px 10)
-                  , top (px 20)
-                  , zIndex (int -1)
-                  ]
+            [ css
+                [ position absolute
+                , marginRight (px 10)
+                , top (px 20)
+                , zIndex (int -1)
+                ]
             ]
             [ map Save
                 (Save.view model.tree [ saveLayout ])
@@ -107,7 +118,9 @@ view model =
             ]
 
         --, jsonDebug model
-        ] |> toUnstyled
+        ]
+        |> toUnstyled
+
 
 
 -- jsonDebug : Model -> Html Msg

@@ -1,4 +1,4 @@
-module Tree.Draw exposing (treeWithConditions, offsetLeft)
+module Tree.Draw exposing (offsetLeft, treeWithConditions)
 
 {--
 
@@ -11,10 +11,10 @@ import Collage.Events exposing (..)
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text as Text exposing (Shape(..), Text, fromString, weight)
-import Color exposing (Color, rgb, rgba, black, blue, darkGray, red, white)
-import Css exposing (overflow, auto, pct, fontFamilies, backgroundColor, borderColor, textAlign, resize)
-import Html.Styled exposing (Html, textarea, div, input, fromUnstyled, toUnstyled)
-import Html.Styled.Attributes exposing (css, cols, maxlength, placeholder, rows, style, type_, wrap, value)
+import Color exposing (Color, black, blue, darkGray, red, rgb, rgba, white)
+import Css exposing (auto, backgroundColor, borderColor, fontFamilies, overflow, pct, resize, textAlign)
+import Html.Styled exposing (Html, div, fromUnstyled, input, textarea, toUnstyled)
+import Html.Styled.Attributes exposing (cols, css, maxlength, placeholder, rows, style, type_, value, wrap)
 import Html.Styled.Events exposing (onInput)
 import Json.Decode as Json exposing (map)
 import Tree.Core exposing (..)
@@ -31,10 +31,13 @@ imposeAt anchor fore back =
         )
         back
 
+
 imposePrime : Collage msg -> Collage msg -> Collage msg
 imposePrime front back =
     -- modification to "Collage.Layout.at" for the hitbox. Fronts outline is used, and it is not overshadowed by the hitbox
-    stack[front, impose back front]
+    stack [ front, impose back front ]
+
+
 
 {--
 
@@ -109,14 +112,16 @@ textBox id newNodeType label maxCharacters =
         , maxlength <| max maxCharacters <| String.length label
         , onInput (UpdateContent id)
         , Html.Styled.Attributes.id <| String.fromInt id
+
         -- , KeyDown <| String.fromInt id
         , value label
-        , css [ Css.width (pct 100)
-              , fontFamilies ["monaco", "monofur", "monospace"]
-              , backgroundColor (Css.rgba 0 0 0 0)
-              , borderColor (Css.rgba 0 0 0 0)
-              , textAlign Css.center
-              ]
+        , css
+            [ Css.width (pct 100)
+            , fontFamilies [ "monaco", "monofur", "monospace" ]
+            , backgroundColor (Css.rgba 0 0 0 0)
+            , borderColor (Css.rgba 0 0 0 0)
+            , textAlign Css.center
+            ]
         ]
         []
 
@@ -225,8 +230,6 @@ statementBoxShape w =
             )
 
 
-
-
 statementBoxEditable : Id -> String -> Collage Msg
 statementBoxEditable id label =
     let
@@ -235,7 +238,7 @@ statementBoxEditable id label =
 
         htmlBox =
             html ( w, h ) <|
-                toUnstyled(textBox id AddStatement label 22)
+                toUnstyled (textBox id AddStatement label 22)
     in
     [ htmlBox
     , statementBoxShape w
@@ -278,7 +281,7 @@ ifBoxEditable id label =
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                toUnstyled(textBox id AddIf label maxCharacters)
+                toUnstyled (textBox id AddIf label maxCharacters)
     in
     stack
         [ htmlBox
@@ -395,7 +398,7 @@ whileBoxEditable id label =
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                toUnstyled(textBox id AddWhile label maxCharacters)
+                toUnstyled (textBox id AddWhile label maxCharacters)
     in
     [ htmlBox
     , whileBoxShape w
@@ -436,7 +439,7 @@ forEachBoxEditable id label =
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                toUnstyled(textBox id AddForEach label maxCharacters)
+                toUnstyled (textBox id AddForEach label maxCharacters)
     in
     [ htmlBox
     , forEachBoxShape w
@@ -447,17 +450,17 @@ forEachBoxEditable id label =
 loopHelper : FillEmpty -> Model -> Tree -> String -> Tree -> Tree -> Collage Msg
 loopHelper nodeType model node text child1 child2 =
     let
-        ( loopBox, typeLabel, (leftTag, bottomTag )) =
+        ( loopBox, typeLabel, ( leftTag, bottomTag ) ) =
             case nodeType of
                 AddWhile ->
                     -- The spaces in the tags are an ugly fix, I'm sorry
-                    ( whileBoxEditable, "while", ("false   ", "   true") )
+                    ( whileBoxEditable, "while", ( "false   ", "   true" ) )
 
                 AddForEach ->
-                    ( forEachBoxEditable, "for each", ("done   ", "  repeat") )
+                    ( forEachBoxEditable, "for each", ( "done   ", "  repeat" ) )
 
                 a ->
-                    Debug.log ("Tried to create loopHelper with non-loop type: " ++ Debug.toString a ++ " continueing without change.") (whileBoxEditable, "report", ("please", "this"))
+                    Debug.log ("Tried to create loopHelper with non-loop type: " ++ Debug.toString a ++ " continueing without change.") ( whileBoxEditable, "report", ( "please", "this" ) )
 
         decoratedLoopBox =
             loopBox node.id text
@@ -494,13 +497,14 @@ loopHelper nodeType model node text child1 child2 =
             ]
                 |> stack
 
-        ( topInner, leftInner, (downInner, rightInner )) =
+        ( topInner, leftInner, ( downInner, rightInner ) ) =
             -- Outerlines
             ( envelope Up inner + unit
             , envelope Left inner + unit
-            , (envelope Down inner + unit
-            , envelope Right inner + unit
-            ))
+            , ( envelope Down inner + unit
+              , envelope Right inner + unit
+              )
+            )
 
         superPath =
             -- Start below child, then goes counterclockwise
@@ -727,6 +731,7 @@ addHitbox highlightedBox id nodeBox =
                 |> (if id == unpackId highlightedBox then
                         -- In this case, a highlightingoverlay blocks this hitbox, causing the onMouseEnter to trigger multiple times
                         identity
+
                     else
                         -- 'always' is used to throw away the entrance point
                         onMouseEnter (always (HighlightBox id))
@@ -743,6 +748,7 @@ addOverlayMenu highlightedBox node nodeBox =
         |> addHitbox highlightedBox node.id
         |> (if node.id == unpackId highlightedBox then
                 addHighlightOverlay node
+
             else
                 identity
            )
@@ -759,15 +765,16 @@ addOverlayMenu highlightedBox node nodeBox =
 multilineEditableTextBox : ConditionType -> String -> Html Msg
 multilineEditableTextBox conditionType label =
     textarea
-       [ wrap "hard"
+        [ wrap "hard"
         , cols 30
         , rows 4
-        , css [overflow auto
-              , resize Css.none
-              , fontFamilies ["monaco", "monofur", "monospace"]
-              , backgroundColor (Css.rgba 0  0  0  0)
-              , borderColor (Css.rgba 0 0 0 0)
-              ]
+        , css
+            [ overflow auto
+            , resize Css.none
+            , fontFamilies [ "monaco", "monofur", "monospace" ]
+            , backgroundColor (Css.rgba 0 0 0 0)
+            , borderColor (Css.rgba 0 0 0 0)
+            ]
         , placeholder <| Debug.toString conditionType
         , value label
         , onInput <| UpdateCondition conditionType
@@ -864,21 +871,22 @@ addConditions model tree =
 
 completeTree : Model -> Collage Msg
 completeTree model =
-         drawTree model model.tree
-            |> at left gap
-            |> at right gap
+    drawTree model model.tree
+        |> at left gap
+        |> at right gap
 
 
 treeWithConditions : Model -> List (Html.Styled.Attribute Msg) -> Html Msg
 treeWithConditions model msgAttributeHtmlList =
     div msgAttributeHtmlList
-      [ completeTree model
-                  |> addConditions model
-                  |> svg
-                  |> fromUnstyled
+        [ completeTree model
+            |> addConditions model
+            |> svg
+            |> fromUnstyled
 
-                    --, text ("Debug info, model.tree: " ++ toStringRec model.tree)
-                  ]
+        --, text ("Debug info, model.tree: " ++ toStringRec model.tree)
+        ]
+
 
 offsetLeft : Model -> Float
 offsetLeft model =

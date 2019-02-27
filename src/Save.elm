@@ -1,4 +1,4 @@
-module Save exposing (..)
+module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, namingField, subscriptions, toJson, treeDecoder, update, uploadButton, view)
 
 {--
 
@@ -11,11 +11,11 @@ module Save exposing (..)
 
 import Base64 exposing (decode)
 import Debug exposing (log)
-import Html.Styled exposing (Html, div, text, button, input, a, br)
-import Html.Styled.Attributes exposing (class, href, id, placeholder, style, type_, autofocus)
+import Html.Styled exposing (Html, a, br, button, div, input, text)
+import Html.Styled.Attributes exposing (autofocus, class, href, id, placeholder, style, type_)
 import Html.Styled.Events exposing (on, onClick, onInput)
-import Json.Decode as Decode exposing(..)
-import Json.Encode as Encode exposing(..)
+import Json.Decode as Decode exposing (..)
+import Json.Encode as Encode exposing (..)
 import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
 import Tree.Core as Tree exposing (..)
 import Tree.Draw as Draw exposing (treeWithConditions)
@@ -105,8 +105,7 @@ view model layout =
 namingField : String -> Html Msg
 namingField flowchartName =
     input
-        [
-        autofocus True
+        [ autofocus True
         , placeholder flowchartName
         , onInput UpdateName
         ]
@@ -117,9 +116,11 @@ downloadButton : Model -> Html Msg
 downloadButton model =
     a
         [ type_ "button"
+
         -- TODO removed encodeUri, does this still work?
-        , href <| "data:text/plain;charset=utf-8," ++ (toJson model)
--- Trigger modal upon downloading
+        , href <| "data:text/plain;charset=utf-8," ++ toJson model
+
+        -- Trigger modal upon downloading
         -- , downloadAs (model.flowchartName ++ ".flow")
         ]
         [ button [] [ text "Download" ] ]
