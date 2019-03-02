@@ -97,7 +97,6 @@ view model =
                 [ position absolute
                 , top (px 25)
                 , height (pct 100)
-                , left (px (offsetLeft model.tree))
                 , zIndex (int 0)
                 ]
     in
@@ -111,9 +110,9 @@ view model =
                 , zIndex (int -1)
                 ]
             ]
-            [ map Save
-                (Save.view model.tree [ saveLayout ])
-            , map Tree
+            [ --map Save
+              --(Save.view model.tree [ saveLayout ]),
+              map Tree
                 (Draw.treeWithConditions model.tree [ treeLayout ])
             ]
 

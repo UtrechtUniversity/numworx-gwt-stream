@@ -1,4 +1,4 @@
-module Tree.Draw exposing (offsetLeft, treeWithConditions)
+module Tree.Draw exposing (treeWithConditions)
 
 {--
 
@@ -757,6 +757,52 @@ addOverlayMenu highlightedBox node nodeBox =
 
 {--
 
+ Draw the flowchartName field
+
+--}
+
+
+flowchartNameBox : String -> Collage Msg
+flowchartNameBox flowchartName =
+    let
+        htmlInputField =
+            input
+                [ -- TODO autofocus True,
+                  placeholder flowchartName
+                , maxlength 20
+                , onInput UpdateName
+                , css
+                    [ Css.width (pct 100)
+                    , fontFamilies [ "monaco", "monofur", "monospace" ]
+                    , backgroundColor (Css.rgba 0 0 0 0)
+                    , borderColor (Css.rgba 0 0 0 0)
+                    , textAlign Css.center
+                    ]
+                ]
+                []
+
+        ( w, h ) =
+            ( unit * 16, unit * 2 )
+
+        htmlBox =
+            html ( w, h ) <| toUnstyled htmlInputField
+
+        flowchartNameBoxShape =
+            rectangle (w + 2 * unit) (4 * unit)
+                |> styled
+                    ( uniform (rgb 244 171 211)
+                    , solid thin (uniform black)
+                    )
+    in
+    [ htmlBox
+    , flowchartNameBoxShape
+    ]
+        |> stack
+
+
+
+{--
+
   Draw pre- and postcondition notes
 
 --}
@@ -845,8 +891,13 @@ addConditions model tree =
                     Debug.log ("Coordinate not found " ++ name) ( 0, 0 )
     in
     tree
+        -- TODO waar is dit voor?
         |> shift ( -19 * unit, 0 )
         |> shift (correctionCoordinates "Start")
+        |> stackTwo
+            (flowchartNameBox model.flowchartName
+                |> align right
+            )
         |> stackTwo
             (noteBox Precondition model.precondition
                 |> align left
@@ -886,12 +937,3 @@ treeWithConditions model msgAttributeHtmlList =
 
         --, text ("Debug info, model.tree: " ++ toStringRec model.tree)
         ]
-
-
-offsetLeft : Model -> Float
-offsetLeft model =
-    let
-        envL =
-            envelope Left (completeTree model)
-    in
-    max (10 + 253 + 61 - envL) 0

@@ -1,4 +1,4 @@
-module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, namingField, subscriptions, toJson, treeDecoder, update, uploadButton, view)
+module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, subscriptions, toJson, treeDecoder, update, uploadButton, view)
 
 {--
 
@@ -8,6 +8,7 @@ module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, downloa
   Legend: Update, Subscriptions, View, Encoding, Decoding
 
 --}
+-- import Tree.Draw as Draw exposing (treeWithConditions)
 
 import Base64 exposing (decode)
 import Debug exposing (log)
@@ -18,13 +19,11 @@ import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
 import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
 import Tree.Core as Tree exposing (..)
-import Tree.Draw as Draw exposing (treeWithConditions)
 import Tree.State as State exposing (..)
 
 
 type Msg
-    = UpdateName String
-    | JsonSelected String
+    = JsonSelected String
     | JsonRead JsonPortData
     | GenerateJavaComments
 
@@ -32,11 +31,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UpdateName newName ->
-            ( { model | flowchartName = newName }
-            , Cmd.none
-            )
-
         JsonSelected inputBoxId ->
             ( model
             , fileSelected inputBoxId
@@ -94,22 +88,10 @@ subscriptions model =
 view : Model -> List (Html.Styled.Attribute Msg) -> Html Msg
 view model layout =
     div layout
-        [ namingField model.flowchartName
-        , br [] []
-        , downloadButton model
+        [ downloadButton model
         , uploadButton
         , copyJavaCommentsButton
         ]
-
-
-namingField : String -> Html Msg
-namingField flowchartName =
-    input
-        [ autofocus True
-        , placeholder flowchartName
-        , onInput UpdateName
-        ]
-        []
 
 
 downloadButton : Model -> Html Msg

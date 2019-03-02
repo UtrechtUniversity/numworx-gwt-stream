@@ -28,7 +28,7 @@ type alias Model =
 
 init : Model
 init =
-    { flowchartName = "Algorithm"
+    { flowchartName = "Algorithm name"
     , tree =
         { id = 0
         , basicTree =
@@ -74,7 +74,8 @@ unpackId highlightedBox =
 
 
 type Msg
-    = UpdateContent Id Content
+    = UpdateName Content
+    | UpdateContent Id Content
     | FillEmpty FillEmpty Id
     | ChangeTree ChangeTree Id
     | HighlightBox Id
@@ -107,6 +108,9 @@ type ConditionType
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        UpdateName newName ->
+            ( { model | flowchartName = newName }, Cmd.none )
+
         UpdateContent idToFind newContent ->
             ( { model | tree = updateContent newContent idToFind model.tree }, Cmd.none )
 
