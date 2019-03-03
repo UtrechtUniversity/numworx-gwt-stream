@@ -925,6 +925,7 @@ completeTree model =
     drawTree model model.tree
         |> at left gap
         |> at right gap
+        |> at top gap
 
 
 treeWithConditions : Model -> List (Html.Styled.Attribute Msg) -> Html Msg

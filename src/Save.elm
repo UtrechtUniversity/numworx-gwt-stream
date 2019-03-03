@@ -11,9 +11,11 @@ module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, downloa
 -- import Tree.Draw as Draw exposing (treeWithConditions)
 
 import Base64 exposing (decode)
+import Color exposing (white)
+import Css exposing (..)
 import Debug exposing (log)
-import Html.Styled exposing (Html, a, br, button, div, input, text)
-import Html.Styled.Attributes exposing (autofocus, class, href, id, placeholder, style, type_)
+import Html.Styled exposing (Html, a, br, button, div, input, li, text, ul)
+import Html.Styled.Attributes exposing (autofocus, class, css, href, id, placeholder, style, type_)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
@@ -80,17 +82,51 @@ subscriptions model =
 
 {--
 
-  View: naming textfield, download- and uploadButtons
+  View: fixed footer menu containing
+   naming textfield, download- and uploadButtons
 
 --}
 
 
-view : Model -> List (Html.Styled.Attribute Msg) -> Html Msg
-view model layout =
-    div layout
-        [ downloadButton model
-        , uploadButton
-        , copyJavaCommentsButton
+unorderdListStyle : List (Html.Styled.Attribute msg)
+unorderdListStyle =
+    -- listStyleType: none;
+    [ css
+        [ margin (px 0)
+        , padding (px 0)
+        , overflow hidden
+        , zIndex (Css.int 10)
+        , backgroundColor (rgb 240 240 240)
+        , position fixed
+        , left (px 0)
+        , bottom (px 0)
+        , height (pct 5)
+        , width (pct 100)
+        ]
+    ]
+
+
+listItemStyle : List (Html.Styled.Attribute msg)
+listItemStyle =
+    [ css
+        [ Css.float left
+        , display block
+
+        -- , color white
+        , textAlign center
+        , padding2 (px 14) (px 16)
+
+        -- text-decoration: none;
+        ]
+    ]
+
+
+view : Model -> Html Msg
+view model =
+    ul unorderdListStyle
+        [ li listItemStyle [ copyJavaCommentsButton ]
+        , li listItemStyle [ downloadButton model ]
+        , li listItemStyle [ uploadButton ]
         ]
 
 

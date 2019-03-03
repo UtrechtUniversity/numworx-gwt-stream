@@ -83,36 +83,26 @@ subscriptions model =
 view : Model -> Html.Html Msg
 view model =
     let
-        saveLayout =
-            css
-                [ position absolute
-                , height (pct 100)
-                , top (px 25)
-                , left (px 10)
-                , zIndex (int 10)
-                ]
-
         treeLayout =
             css
                 [ position absolute
-                , top (px 25)
-                , height (pct 100)
+                , height (pct 10)
                 , zIndex (int 0)
                 ]
     in
-    div [ css [ overflowY auto ] ]
+    div
+        [ css [ overflowY auto ]
+        ]
         --), ( "height", "100%" ) ] ]
         [ div
             [ css
                 [ position absolute
-                , marginRight (px 10)
-                , top (px 20)
                 , zIndex (int -1)
                 ]
             ]
-            [ --map Save
-              --(Save.view model.tree [ saveLayout ]),
-              map Tree
+            [ map Save
+                (Save.view model.tree)
+            , map Tree
                 (Draw.treeWithConditions model.tree [ treeLayout ])
             ]
 
