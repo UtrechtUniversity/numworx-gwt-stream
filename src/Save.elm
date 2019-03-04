@@ -100,7 +100,7 @@ unorderdListStyle =
         , position fixed
         , left (px 0)
         , bottom (px 0)
-        , height (pct 5)
+        , height (px 50)
         , width (pct 100)
         ]
     ]

@@ -85,15 +85,14 @@ view model =
     let
         treeLayout =
             css
-                [ position absolute
-                , height (pct 10)
+                [ position relative
+                , paddingBottom (px 50)
                 , zIndex (int 0)
                 ]
     in
     div
         [ css [ overflowY auto ]
         ]
-        --), ( "height", "100%" ) ] ]
         [ div
             [ css
                 [ position absolute
