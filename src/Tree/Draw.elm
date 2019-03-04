@@ -14,7 +14,7 @@ import Collage.Text as Text exposing (Shape(..), Text, fromString, weight)
 import Color exposing (Color, black, blue, darkGray, red, rgb, rgba, white)
 import Css exposing (auto, backgroundColor, borderColor, fontFamilies, overflow, pct, resize, textAlign)
 import Html.Styled exposing (Html, div, fromUnstyled, input, textarea, toUnstyled)
-import Html.Styled.Attributes exposing (cols, css, maxlength, placeholder, rows, style, type_, value, wrap)
+import Html.Styled.Attributes exposing (autofocus, cols, css, maxlength, placeholder, rows, style, type_, value, wrap)
 import Html.Styled.Events exposing (onInput)
 import Json.Decode as Json exposing (map)
 import Tree.Core exposing (..)
@@ -767,8 +767,8 @@ flowchartNameBox flowchartName =
     let
         htmlInputField =
             input
-                [ -- TODO autofocus True,
-                  placeholder flowchartName
+                [ autofocus True
+                , placeholder flowchartName
                 , maxlength 20
                 , onInput UpdateName
                 , css
@@ -790,7 +790,7 @@ flowchartNameBox flowchartName =
         flowchartNameBoxShape =
             rectangle (w + 2 * unit) (4 * unit)
                 |> styled
-                    ( uniform (rgb 244 171 211)
+                    ( uniform (rgb 193 212 255)
                     , solid thin (uniform black)
                     )
     in
@@ -798,6 +798,7 @@ flowchartNameBox flowchartName =
     , flowchartNameBoxShape
     ]
         |> stack
+        |> name "flowchartNameBox"
 
 
 
@@ -891,13 +892,14 @@ addConditions model tree =
                     Debug.log ("Coordinate not found " ++ name) ( 0, 0 )
     in
     tree
-        -- TODO waar is dit voor?
-        |> shift ( -19 * unit, 0 )
-        |> shift (correctionCoordinates "Start")
+        -- |> shift (correctionCoordinates "Start")
+        |> shift ( 6.5 * unit, 0 )
         |> stackTwo
             (flowchartNameBox model.flowchartName
                 |> align right
             )
+        |> connect [ ( "Start", left ), ( "flowchartNameBox", right ) ] (dash verythin (uniform black))
+        |> align right
         |> stackTwo
             (noteBox Precondition model.precondition
                 |> align left
