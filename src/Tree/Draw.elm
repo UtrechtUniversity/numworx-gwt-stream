@@ -11,7 +11,7 @@ import Collage.Events exposing (..)
 import Collage.Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text as Text exposing (Shape(..), Text, fromString, weight)
-import Color exposing (Color, black, blue, darkGray, red, rgb, rgba, white)
+import Color exposing (Color, black, blue, darkGray, red, rgb255, rgba, white)
 import Css exposing (auto, backgroundColor, borderColor, fontFamilies, overflow, pct, resize, textAlign)
 import Html.Styled exposing (Html, div, fromUnstyled, input, textarea, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, cols, css, maxlength, placeholder, rows, style, type_, value, wrap)
@@ -142,7 +142,7 @@ stubBox stubText =
         shape =
             ellipse 50 25
                 |> styled
-                    ( uniform (rgb 208 198 243)
+                    ( uniform (rgb255 208 198 243)
                     , solid thin (uniform black)
                     )
 
@@ -183,7 +183,7 @@ emptyBox idEmpty =
         shape =
             rectangle (w + unit) (h + unit)
                 |> styled
-                    ( uniform (rgb 255 202 255)
+                    ( uniform (rgb255 255 202 255)
                     , dash thin (uniform darkGray)
                     )
     in
@@ -225,7 +225,7 @@ statementBoxShape : Float -> Collage msg
 statementBoxShape w =
     rectangle (w + 2 * unit) (4 * unit)
         |> styled
-            ( uniform (rgb 244 171 211)
+            ( uniform (rgb255 244 171 211)
             , solid thin (uniform black)
             )
 
@@ -260,7 +260,7 @@ ifBoxShape w =
     in
     polygon points
         |> styled
-            ( uniform (rgb 241 190 244)
+            ( uniform (rgb255 241 190 244)
             , solid thin (uniform black)
             )
         |> center
@@ -378,7 +378,7 @@ whileBoxShape w =
     in
     polygon points
         |> styled
-            ( uniform (rgb 181 199 245)
+            ( uniform (rgb255 181 199 245)
             , solid thin (uniform black)
             )
         |> center
@@ -419,7 +419,7 @@ forEachBoxShape w =
     in
     polygon points
         |> styled
-            ( uniform (rgb 255 232 255)
+            ( uniform (rgb255 255 232 255)
             , solid thin (uniform black)
             )
         |> center
@@ -724,7 +724,7 @@ addHitbox highlightedBox id nodeBox =
 
         hitbox =
             rectangle (w + unit * 2) (h + unit * 2)
-                |> filled (uniform (rgba 250 20 20 0.1))
+                |> filled (uniform (rgba 0 0 0 0))
 
         trigger box =
             box
@@ -790,7 +790,7 @@ flowchartNameBox flowchartName =
         flowchartNameBoxShape =
             rectangle (w + 2 * unit) (4 * unit)
                 |> styled
-                    ( uniform (rgb 193 212 255)
+                    ( uniform (rgb255 193 212 255)
                     , solid thin (uniform black)
                     )
     in
@@ -859,7 +859,7 @@ noteBox conditionType label =
             ]
                 |> polygon
                 |> styled
-                    ( uniform (rgb 220 237 248)
+                    ( uniform (rgb255 220 237 248)
                     , solid thin (uniform black)
                     )
                 |> align topRight
