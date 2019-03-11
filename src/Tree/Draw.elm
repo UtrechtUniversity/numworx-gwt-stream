@@ -90,6 +90,10 @@ labelText string =
         |> rendered
 
 
+
+-- TODO Remove textbox once redundant
+
+
 textBox : Id -> FillEmpty -> String -> Int -> Html Msg
 textBox id newNodeType label maxCharacters =
     let
@@ -106,6 +110,9 @@ textBox id newNodeType label maxCharacters =
 
                 AddForEach ->
                     "ForEach"
+
+                _ ->
+                    "Remove textbox function"
     in
     input
         [ placeholder placeholderLabel
@@ -124,6 +131,98 @@ textBox id newNodeType label maxCharacters =
             ]
         ]
         []
+
+
+multilineEditableTextBox : Id -> FillEmpty -> String -> Int -> ( Html Msg, Int, Int )
+multilineEditableTextBox id nodeType content maxBoxWidth =
+    let
+        characterWidth c =
+            case c of
+                '\t' ->
+                    4
+
+                '\n' ->
+                    0
+
+                _ ->
+                    1
+
+        -- Returns (currentWidth, maxWidth, height)
+        boxDimensions s =
+            case s of
+                [] ->
+                    ( 0, 0, 1 )
+
+                c :: [] ->
+                    if c == '\n' then
+                        ( 0, 0, 2 )
+
+                    else
+                        ( characterWidth c, characterWidth c, 1 )
+
+                c :: cs ->
+                    let
+                        ( cws, mws, hs ) =
+                            boxDimensions cs
+                    in
+                    if c == '\n' then
+                        ( 0, mws, hs + 1 )
+
+                    else if cws + characterWidth c > maxBoxWidth then
+                        ( characterWidth c, mws, hs + 1 )
+
+                    else
+                        ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
+
+        ( _, w, h ) =
+            boxDimensions
+                (String.toList content)
+
+        ( wta, hta ) =
+            ( max w 30, max h 4 )
+
+        placeholderLabel =
+            case nodeType of
+                AddStatement ->
+                    "Statement"
+
+                AddIf ->
+                    "If"
+
+                AddWhile ->
+                    "While"
+
+                AddForEach ->
+                    "ForEach"
+
+                AddPreCondition ->
+                    "Precondition"
+
+                AddPostCondition ->
+                    "Postcondition"
+
+                AddFlowchartName ->
+                    "Algorithm name"
+
+        htmlTextArea =
+            textarea
+                [ wrap "hard"
+                , cols wta
+                , rows hta
+                , css
+                    [ overflow auto
+                    , resize Css.none
+                    , fontFamilies [ "monaco", "monofur", "monospace" ]
+                    , backgroundColor (Css.rgba 0 0 0 0)
+                    , borderColor (Css.rgba 0 0 0 0)
+                    ]
+                , placeholder placeholderLabel
+                , value content
+                , onInput <| UpdateContent <| Debug.log "updating id: " id
+                ]
+                []
+    in
+    ( htmlTextArea, wta, hta )
 
 
 
@@ -212,6 +311,9 @@ boxNonEditable label nodeType =
 
                 AddForEach ->
                     forEachBoxShape w
+
+                _ ->
+                    Debug.log "Tried to create non editable box for Precondition, Postcondition or FlowchartName. Drawing ellipse instead: " filled (uniform red) (ellipse 4 1)
     in
     [ text, shape ] |> stack
 
@@ -233,8 +335,14 @@ statementBoxShape w =
 statementBoxEditable : Id -> String -> Collage Msg
 statementBoxEditable id label =
     let
-        ( w, h ) =
+        ( minW, minH ) =
             ( unit * 18, unit * 2 )
+
+        -- ( htmlTextArea, wta, hta ) =
+        --     multilineEditableTextBox conditionType label 30
+        ( w, h ) =
+            -- TODO use wta and hta
+            ( minW, minH )
 
         htmlBox =
             html ( w, h ) <|
@@ -809,78 +917,6 @@ flowchartNameBox flowchartName =
 --}
 
 
-multilineEditableTextBox : ConditionType -> String -> Int -> ( Html Msg, Int, Int )
-multilineEditableTextBox conditionType content maxBoxWidth =
-    let
-        characterWidth c =
-            case c of
-                '\t' ->
-                    4
-
-                '\n' ->
-                    0
-
-                _ ->
-                    1
-
-        -- Returns (currentWidth, maxWidth, height)
-        -- boxDimension : String -> ( Int, Int, Int )
-        boxDimensions s =
-            case s of
-                [] ->
-                    ( 0, 0, 1 )
-
-                c :: [] ->
-                    if c == '\n' then
-                        ( 0, 0, 2 )
-
-                    else
-                        ( characterWidth c, characterWidth c, 1 )
-
-                c :: cs ->
-                    let
-                        ( cws, mws, hs ) =
-                            boxDimensions cs
-                    in
-                    if c == '\n' then
-                        ( 0, mws, hs + 1 )
-
-                    else if cws + characterWidth c > maxBoxWidth then
-                        ( characterWidth c, mws, hs + 1 )
-
-                    else
-                        ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
-
-        ( _, w, h ) =
-            Debug.log "boxDimensions: " <|
-                boxDimensions
-                    (String.toList content)
-
-        ( wta, hta ) =
-            Debug.log "TADimensions: " <|
-                ( max w 30, max h 4 )
-
-        htmlTextArea =
-            textarea
-                [ wrap "hard"
-                , cols wta
-                , rows hta
-                , css
-                    [ overflow auto
-                    , resize Css.none
-                    , fontFamilies [ "monaco", "monofur", "monospace" ]
-                    , backgroundColor (Css.rgba 0 0 0 0)
-                    , borderColor (Css.rgba 0 0 0 0)
-                    ]
-                , placeholder <| Debug.toString conditionType
-                , value content
-                , onInput <| UpdateCondition conditionType
-                ]
-                []
-    in
-    ( htmlTextArea, wta, hta )
-
-
 stackTwo : Collage msg -> Collage msg -> Collage msg
 stackTwo front back =
     -- Inline stacking in combination with |>
@@ -888,20 +924,37 @@ stackTwo front back =
     [ front, back ] |> stack
 
 
-noteBox : ConditionType -> String -> Collage Msg
-noteBox conditionType label =
+noteBox : Id -> String -> Collage Msg
+noteBox id label =
     let
         ( minW, minH ) =
-            -- ( unit * 14, unit * 5 )
             ( 30, 4 )
 
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id nodeType label 30
+
         ( w, h ) =
-            Debug.log "(w,h) "
-                ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 13 )
+            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 13 )
+
+        nodeType =
+            if id == 4 then
+                AddPreCondition
+
+            else if id == 5 then
+                AddPostCondition
+
+            else
+                Debug.log "Tried to create non pre- or postcondition notebox. Using postcondition instead " AddPostCondition
+
+        conditionType =
+            if id == 4 then
+                "Precondition"
+
+            else
+                "Postcondition"
 
         title =
             conditionType
-                |> Debug.toString
                 |> fromString
                 |> weight Text.SemiBold
                 |> rendered
@@ -925,9 +978,6 @@ noteBox conditionType label =
                 |> align topLeft
                 |> shift ( -unit, unit * 2.5 )
                 |> impose text
-
-        ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox conditionType label 30
 
         text =
             html ( w * 2, h * 2 ) (toUnstyled htmlTextArea)
@@ -958,13 +1008,13 @@ addConditions model tree =
         |> connect [ ( "Start", left ), ( "flowchartNameBox", right ) ] (dash verythin (uniform black))
         |> align right
         |> stackTwo
-            (noteBox Precondition model.precondition
+            (noteBox 4 model.precondition
                 |> align left
             )
         |> connect [ ( "Start", right ), ( "Precondition", left ) ] (dash verythin (uniform black))
         |> shift (correctionCoordinates "End")
         |> stackTwo
-            (noteBox Postcondition model.postcondition
+            (noteBox 5 model.postcondition
                 |> align bottomLeft
                 |> shift ( 0, -3 * unit )
             )

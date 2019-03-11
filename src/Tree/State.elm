@@ -1,9 +1,18 @@
-module Tree.State exposing (ChangeTree(..), ConditionType(..), FillEmpty(..), Model, Msg(..), defaultModel, init, unpackId, update)
+module Tree.State exposing (ChangeTree(..), FillEmpty(..), Model, Msg(..), defaultModel, init, unpackId, update)
 
 {--
 
   Module containing state of tree as described in Tree.Core.elm and auxiliary variables
   Describes, inits and updates state
+
+  Note on (somewhat ugly) hardcoded id-numbers:
+   0: Start node
+   1: First Empty node
+   2: End node
+   3: Algorithm name box
+   4: Precondition
+   5: Postcondition
+   10+: All generated nodes (mind, there are large gaps between these numbers)
 
 --}
 
@@ -82,7 +91,6 @@ type Msg
     | DehighlightBox Id
     | KeyDown String Int
     | BlurResult (Result Error ())
-    | UpdateCondition ConditionType Content
 
 
 type FillEmpty
@@ -90,6 +98,9 @@ type FillEmpty
     | AddIf
     | AddWhile
     | AddForEach
+    | AddPreCondition
+    | AddPostCondition
+    | AddFlowchartName
 
 
 type ChangeTree
@@ -100,11 +111,6 @@ type ChangeTree
     | Delete
 
 
-type ConditionType
-    = Precondition
-    | Postcondition
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -112,7 +118,7 @@ update msg model =
             ( { model | flowchartName = newName }, Cmd.none )
 
         UpdateContent idToFind newContent ->
-            ( { model | tree = updateContent newContent idToFind model.tree }, Cmd.none )
+            ( updateContent newContent idToFind model, Cmd.none )
 
         FillEmpty newNodeType idToFind ->
             ( { model
@@ -166,14 +172,6 @@ update msg model =
                     --Debug.log "Blur failed!"
                     ( model, Cmd.none )
 
-        UpdateCondition conditionType newText ->
-            case conditionType of
-                Precondition ->
-                    ( { model | precondition = newText }, Cmd.none )
-
-                Postcondition ->
-                    ( { model | postcondition = newText }, Cmd.none )
-
 
 
 {--
@@ -183,13 +181,13 @@ update msg model =
 --}
 
 
-updateContent : Content -> Id -> Tree -> Tree
-updateContent newContent idToFind node =
+updateContent : Content -> Id -> Model -> Model
+updateContent newContent idToFind model =
     let
         -- helper needs an argument, otherwise it gets pre-computed, which triggers
         --  the default case
-        helper antiBugNode =
-            case antiBugNode.basicTree of
+        helper node =
+            case node.basicTree of
                 Statement content child ->
                     Statement newContent child
 
@@ -204,12 +202,25 @@ updateContent newContent idToFind node =
 
                 a ->
                     Debug.log ("Tried to update content of non-content node" ++ Debug.toString a ++ " With Id: " ++ String.fromInt node.id ++ " instead doing nothing.") Void
+
+        treeRecursion node =
+            if node.id == idToFind then
+                { id = node.id, basicTree = helper node }
+
+            else
+                continueRecursion treeRecursion node
     in
-    if node.id == idToFind then
-        { id = node.id, basicTree = helper node }
+    if idToFind == 3 then
+        { model | flowchartName = newContent }
+
+    else if idToFind == 4 then
+        { model | precondition = newContent }
+
+    else if idToFind == 5 then
+        { model | postcondition = newContent }
 
     else
-        continueRecursion (updateContent newContent idToFind) node
+        { model | tree = treeRecursion model.tree }
 
 
 
@@ -263,6 +274,9 @@ fillEmpty currentId newNodeType idToFind node =
                                 }
                         }
                         child
+
+                _ ->
+                    Debug.log "Tried to instantiate a Precondition, Postcondition or FlowchartName in function 'fillEmpty'. Instantiated Void instead" Void
 
         helper currentNode =
             case currentNode of
