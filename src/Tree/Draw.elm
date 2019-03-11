@@ -90,49 +90,6 @@ labelText string =
         |> rendered
 
 
-
--- TODO Remove textbox once redundant
-
-
-textBox : Id -> FillEmpty -> String -> Int -> Html Msg
-textBox id newNodeType label maxCharacters =
-    let
-        placeholderLabel =
-            case newNodeType of
-                AddStatement ->
-                    "Statement"
-
-                AddIf ->
-                    "If"
-
-                AddWhile ->
-                    "While"
-
-                AddForEach ->
-                    "ForEach"
-
-                _ ->
-                    "Remove textbox function"
-    in
-    input
-        [ placeholder placeholderLabel
-        , maxlength <| max maxCharacters <| String.length label
-        , onInput (UpdateContent id)
-        , Html.Styled.Attributes.id <| String.fromInt id
-
-        -- , KeyDown <| String.fromInt id
-        , value label
-        , css
-            [ Css.width (pct 100)
-            , fontFamilies [ "monaco", "monofur", "monospace" ]
-            , backgroundColor (Css.rgba 0 0 0 0)
-            , borderColor (Css.rgba 0 0 0 0)
-            , textAlign Css.center
-            ]
-        ]
-        []
-
-
 multilineEditableTextBox : Id -> FillEmpty -> String -> Int -> ( Html Msg, Int, Int )
 multilineEditableTextBox id nodeType content maxBoxWidth =
     let
@@ -338,15 +295,16 @@ statementBoxEditable id label =
         ( minW, minH ) =
             ( unit * 18, unit * 2 )
 
-        -- ( htmlTextArea, wta, hta ) =
-        --     multilineEditableTextBox conditionType label 30
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id AddStatement label 22
+
         ( w, h ) =
             -- TODO use wta and hta
             ( minW, minH )
 
         htmlBox =
             html ( w, h ) <|
-                toUnstyled (textBox id AddStatement label 22)
+                toUnstyled htmlTextArea
     in
     [ htmlBox
     , statementBoxShape w
@@ -376,20 +334,22 @@ ifBoxShape w =
 
 ifBoxEditable : Id -> String -> Collage Msg
 ifBoxEditable id label =
-    -- Copyright claim to T. Steenvoorden :sweatsmile:
     let
         maxCharacters =
             25
 
-        characterWidth =
-            min maxCharacters <| max (String.length label) 6
+        ( minW, minH ) =
+            ( 25, 1 )
 
-        w =
-            max (unit * 0.85 * toFloat characterWidth) 70
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id AddIf label maxCharacters
+
+        ( w, h ) =
+            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 2 )
 
         htmlBox =
-            html ( w, 2 * unit ) <|
-                toUnstyled (textBox id AddIf label maxCharacters)
+            html ( w, h ) <|
+                toUnstyled htmlTextArea
     in
     stack
         [ htmlBox
@@ -504,9 +464,12 @@ whileBoxEditable id label =
         w =
             max (unit * 0.85 * toFloat characterWidth) 70
 
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id AddWhile label maxCharacters
+
         htmlBox =
             html ( w, 2 * unit ) <|
-                toUnstyled (textBox id AddWhile label maxCharacters)
+                toUnstyled htmlTextArea
     in
     [ htmlBox
     , whileBoxShape w
@@ -542,12 +505,15 @@ forEachBoxEditable id label =
         characterWidth =
             min maxCharacters <| max (String.length label) 5
 
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id AddForEach label maxCharacters
+
         w =
             max (unit * 0.85 * toFloat characterWidth) 70
 
         htmlBox =
             html ( w, 2 * unit ) <|
-                toUnstyled (textBox id AddForEach label maxCharacters)
+                toUnstyled htmlTextArea
     in
     [ htmlBox
     , forEachBoxShape w
@@ -873,6 +839,7 @@ addOverlayMenu highlightedBox node nodeBox =
 flowchartNameBox : String -> Collage Msg
 flowchartNameBox flowchartName =
     let
+        -- TODO rewrtie to allow multiple lines
         htmlInputField =
             input
                 [ autofocus True
