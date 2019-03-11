@@ -90,8 +90,8 @@ labelText string =
         |> rendered
 
 
-multilineEditableTextBox : Id -> FillEmpty -> String -> Int -> ( Html Msg, Int, Int )
-multilineEditableTextBox id nodeType content maxBoxWidth =
+multilineEditableTextBox : Id -> FillEmpty -> String -> Int -> Int -> Int -> ( Html Msg, Int, Int )
+multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidth =
     let
         characterWidth c =
             case c of
@@ -131,12 +131,12 @@ multilineEditableTextBox id nodeType content maxBoxWidth =
                     else
                         ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
 
-        ( _, w, h ) =
+        ( _, wc, hc ) =
             boxDimensions
                 (String.toList content)
 
-        ( wta, hta ) =
-            ( max w 30, max h 4 )
+        ( w, h ) =
+            ( max minBoxWidth wc, max minBoxHeight hc )
 
         placeholderLabel =
             case nodeType of
@@ -164,8 +164,8 @@ multilineEditableTextBox id nodeType content maxBoxWidth =
         htmlTextArea =
             textarea
                 [ wrap "hard"
-                , cols wta
-                , rows hta
+                , cols w
+                , rows h
                 , css
                     [ overflow auto
                     , resize Css.none
@@ -175,11 +175,11 @@ multilineEditableTextBox id nodeType content maxBoxWidth =
                     ]
                 , placeholder placeholderLabel
                 , value content
-                , onInput <| UpdateContent <| Debug.log "updating id: " id
+                , onInput <| UpdateContent <| id
                 ]
                 []
     in
-    ( htmlTextArea, wta, hta )
+    ( htmlTextArea, w, h )
 
 
 
@@ -255,13 +255,16 @@ boxNonEditable label nodeType =
         w =
             max (width text) 40
 
+        h =
+            1
+
         shape =
             case nodeType of
                 AddStatement ->
                     statementBoxShape w
 
                 AddIf ->
-                    ifBoxShape w
+                    ifBoxShape w 19
 
                 AddWhile ->
                     whileBoxShape w
@@ -293,10 +296,10 @@ statementBoxEditable : Id -> String -> Collage Msg
 statementBoxEditable id label =
     let
         ( minW, minH ) =
-            ( unit * 18, unit * 2 )
+            ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddStatement label 22
+            multilineEditableTextBox id AddStatement label minW minH 22
 
         ( w, h ) =
             -- TODO use wta and hta
@@ -312,16 +315,16 @@ statementBoxEditable id label =
         |> stack
 
 
-ifBoxShape : Float -> Collage msg
-ifBoxShape w =
+ifBoxShape : Float -> Float -> Collage msg
+ifBoxShape w h =
     let
         points =
-            [ ( 0, unit * 2 )
+            [ ( 0, h )
             , ( -(unit * 2), 0 )
-            , ( 0, -(unit * 2) )
-            , ( w, -(unit * 2) )
+            , ( 0, -h )
+            , ( w, -h )
             , ( w + (unit * 2), 0 )
-            , ( w, unit * 2 )
+            , ( w, h )
             ]
     in
     polygon points
@@ -335,25 +338,28 @@ ifBoxShape w =
 ifBoxEditable : Id -> String -> Collage Msg
 ifBoxEditable id label =
     let
-        maxCharacters =
-            25
+        maxWidth =
+            23
 
         ( minW, minH ) =
-            ( 25, 1 )
+            ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddIf label maxCharacters
+            -- Debug.log "(_, w, h): " <|
+            multilineEditableTextBox id AddIf label minW minH maxWidth
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 2 )
+            -- Debug.log "(w,h) :"
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
 
         htmlBox =
-            html ( w, h ) <|
+            html ( w, h * 2 ) <|
                 toUnstyled htmlTextArea
     in
     stack
         [ htmlBox
-        , ifBoxShape w
+            |> shift ( 0, -7 )
+        , ifBoxShape w h
         ]
 
 
@@ -465,7 +471,7 @@ whileBoxEditable id label =
             max (unit * 0.85 * toFloat characterWidth) 70
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddWhile label maxCharacters
+            multilineEditableTextBox id AddWhile label 10 1 maxCharacters
 
         htmlBox =
             html ( w, 2 * unit ) <|
@@ -506,7 +512,7 @@ forEachBoxEditable id label =
             min maxCharacters <| max (String.length label) 5
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddForEach label maxCharacters
+            multilineEditableTextBox id AddForEach label 10 1 maxCharacters
 
         w =
             max (unit * 0.85 * toFloat characterWidth) 70
@@ -898,7 +904,7 @@ noteBox id label =
             ( 30, 4 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id nodeType label 30
+            multilineEditableTextBox id nodeType label minW minH minW
 
         ( w, h ) =
             ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 13 )
