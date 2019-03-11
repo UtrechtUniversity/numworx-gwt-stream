@@ -809,24 +809,76 @@ flowchartNameBox flowchartName =
 --}
 
 
-multilineEditableTextBox : ConditionType -> String -> Html Msg
-multilineEditableTextBox conditionType label =
-    textarea
-        [ wrap "hard"
-        , cols 30
-        , rows 4
-        , css
-            [ overflow auto
-            , resize Css.none
-            , fontFamilies [ "monaco", "monofur", "monospace" ]
-            , backgroundColor (Css.rgba 0 0 0 0)
-            , borderColor (Css.rgba 0 0 0 0)
-            ]
-        , placeholder <| Debug.toString conditionType
-        , value label
-        , onInput <| UpdateCondition conditionType
-        ]
-        []
+multilineEditableTextBox : ConditionType -> String -> Int -> ( Html Msg, Int, Int )
+multilineEditableTextBox conditionType content maxBoxWidth =
+    let
+        characterWidth c =
+            case c of
+                '\t' ->
+                    4
+
+                '\n' ->
+                    0
+
+                _ ->
+                    1
+
+        -- Returns (currentWidth, maxWidth, height)
+        -- boxDimension : String -> ( Int, Int, Int )
+        boxDimensions s =
+            case s of
+                [] ->
+                    ( 0, 0, 1 )
+
+                c :: [] ->
+                    if c == '\n' then
+                        ( 0, 0, 2 )
+
+                    else
+                        ( characterWidth c, characterWidth c, 1 )
+
+                c :: cs ->
+                    let
+                        ( cws, mws, hs ) =
+                            boxDimensions cs
+                    in
+                    if c == '\n' then
+                        ( 0, mws, hs + 1 )
+
+                    else if cws + characterWidth c > maxBoxWidth then
+                        ( characterWidth c, mws, hs + 1 )
+
+                    else
+                        ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
+
+        ( _, w, h ) =
+            Debug.log "boxDimensions: " <|
+                boxDimensions
+                    (String.toList content)
+
+        ( wta, hta ) =
+            Debug.log "TADimensions: " <|
+                ( max w 30, max h 4 )
+
+        htmlTextArea =
+            textarea
+                [ wrap "hard"
+                , cols wta
+                , rows hta
+                , css
+                    [ overflow auto
+                    , resize Css.none
+                    , fontFamilies [ "monaco", "monofur", "monospace" ]
+                    , backgroundColor (Css.rgba 0 0 0 0)
+                    , borderColor (Css.rgba 0 0 0 0)
+                    ]
+                , placeholder <| Debug.toString conditionType
+                , value content
+                , onInput <| UpdateCondition conditionType
+                ]
+                []
+    in
+    ( htmlTextArea, wta, hta )
 
 
 stackTwo : Collage msg -> Collage msg -> Collage msg
@@ -839,8 +891,13 @@ stackTwo front back =
 noteBox : ConditionType -> String -> Collage Msg
 noteBox conditionType label =
     let
+        ( minW, minH ) =
+            -- ( unit * 14, unit * 5 )
+            ( 30, 4 )
+
         ( w, h ) =
-            ( unit * 14, unit * 5 )
+            Debug.log "(w,h) "
+                ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 13 )
 
         title =
             conditionType
@@ -869,11 +926,11 @@ noteBox conditionType label =
                 |> shift ( -unit, unit * 2.5 )
                 |> impose text
 
-        htmlText =
-            multilineEditableTextBox conditionType label
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox conditionType label 30
 
         text =
-            html ( w * 2 - unit * 2, h * 2 - unit * 3.5 ) (toUnstyled htmlText)
+            html ( w * 2, h * 2 ) (toUnstyled htmlTextArea)
                 |> align topLeft
     in
     shape

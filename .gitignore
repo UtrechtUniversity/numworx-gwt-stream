@@ -11,3 +11,4 @@ repl-temp-*
 *.7z
 *.zip
 /flowcharttool/testEnv/*
+/fiddle/*
