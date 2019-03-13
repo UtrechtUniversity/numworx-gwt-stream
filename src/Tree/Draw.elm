@@ -90,7 +90,7 @@ labelText string =
         |> rendered
 
 
-multilineEditableTextBox : Id -> FillEmpty -> String -> Int -> Int -> Int -> ( Html Msg, Int, Int )
+multilineEditableTextBox : Id -> NodeType -> String -> Int -> Int -> Int -> ( Html Msg, Int, Int )
 multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidth =
     let
         characterWidth c =
@@ -142,25 +142,25 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
 
         placeholderLabel =
             case nodeType of
-                AddStatement ->
+                StatementNode ->
                     "Statement"
 
-                AddIf ->
+                IfNode ->
                     "If"
 
-                AddWhile ->
+                WhileNode ->
                     "While"
 
-                AddForEach ->
+                ForEachNode ->
                     "ForEach"
 
-                AddPreCondition ->
+                PreConditionNode ->
                     "Precondition"
 
-                AddPostCondition ->
+                PostConditionNode ->
                     "Postcondition"
 
-                AddFlowchartName ->
+                FlowchartNameNode ->
                     "Algorithm name"
 
         htmlTextArea =
@@ -223,14 +223,14 @@ emptyBox idEmpty =
 
         options =
             List.intersperse menuGap
-                [ boxNonEditable "statement" AddStatement
-                    |> onClick (FillEmpty AddStatement idEmpty)
-                , boxNonEditable "if" AddIf
-                    |> onClick (FillEmpty AddIf idEmpty)
-                , boxNonEditable "while" AddWhile
-                    |> onClick (FillEmpty AddWhile idEmpty)
-                , boxNonEditable "forEach" AddForEach
-                    |> onClick (FillEmpty AddForEach idEmpty)
+                [ boxNonEditable "statement" StatementNode
+                    |> onClick (FillEmpty StatementNode idEmpty)
+                , boxNonEditable "if" IfNode
+                    |> onClick (FillEmpty IfNode idEmpty)
+                , boxNonEditable "while" WhileNode
+                    |> onClick (FillEmpty WhileNode idEmpty)
+                , boxNonEditable "forEach" ForEachNode
+                    |> onClick (FillEmpty ForEachNode idEmpty)
                 ]
                 |> horizontal
                 |> center
@@ -248,7 +248,7 @@ emptyBox idEmpty =
     [ options, shape ] |> stack
 
 
-boxNonEditable : String -> FillEmpty -> Collage Msg
+boxNonEditable : String -> NodeType -> Collage Msg
 boxNonEditable label nodeType =
     let
         text =
@@ -262,17 +262,17 @@ boxNonEditable label nodeType =
 
         shape =
             case nodeType of
-                AddStatement ->
+                StatementNode ->
                     statementBoxShape w h
 
-                AddIf ->
+                IfNode ->
                     ifBoxShape w h
 
-                AddWhile ->
-                    loopBoxShape AddWhile w h
+                WhileNode ->
+                    loopBoxShape WhileNode w h
 
-                AddForEach ->
-                    loopBoxShape AddForEach w h
+                ForEachNode ->
+                    loopBoxShape ForEachNode w h
 
                 _ ->
                     Debug.log "Tried to create non editable box for Precondition, Postcondition or FlowchartName. Drawing ellipse instead: " filled (uniform red) (ellipse 4 1)
@@ -304,7 +304,7 @@ statementBoxEditable id label =
             ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddStatement label minW minH maxWidth
+            multilineEditableTextBox id StatementNode label minW minH maxWidth
 
         ( w, h ) =
             ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 13 )
@@ -349,7 +349,7 @@ ifBoxEditable id label =
             ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddIf label minW minH maxWidth
+            multilineEditableTextBox id IfNode label minW minH maxWidth
 
         ( w, h ) =
             ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
@@ -441,15 +441,15 @@ The While and the ForEach have the same structure, so I generalised them to 'loo
 --}
 
 
-loopBoxShape : FillEmpty -> Float -> Float -> Collage Msg
+loopBoxShape : NodeType -> Float -> Float -> Collage Msg
 loopBoxShape nodeType w h =
     let
         boxColor =
             case nodeType of
-                AddWhile ->
+                WhileNode ->
                     rgb255 181 199 245
 
-                AddForEach ->
+                ForEachNode ->
                     rgb255 255 232 255
 
                 _ ->
@@ -471,7 +471,7 @@ loopBoxShape nodeType w h =
         |> center
 
 
-loopBoxEditable : FillEmpty -> Id -> String -> Collage Msg
+loopBoxEditable : NodeType -> Id -> String -> Collage Msg
 loopBoxEditable nodeType id label =
     let
         maxCharacters =
@@ -496,16 +496,16 @@ loopBoxEditable nodeType id label =
         |> stack
 
 
-loopHelper : FillEmpty -> Model -> Tree -> String -> Tree -> Tree -> Collage Msg
+loopHelper : NodeType -> Model -> Tree -> String -> Tree -> Tree -> Collage Msg
 loopHelper nodeType model node text child1 child2 =
     let
         ( typeLabel, ( leftTag, bottomTag ) ) =
             case nodeType of
-                AddWhile ->
+                WhileNode ->
                     -- The spaces in the tags are an ugly fix, I'm sorry
                     ( "while", ( "false   ", "   true" ) )
 
-                AddForEach ->
+                ForEachNode ->
                     ( "for each", ( "done   ", "  repeat" ) )
 
                 a ->
@@ -633,14 +633,14 @@ drawTree model node =
 
         While text child1 child2 ->
             [ collageWithTopArrow
-                (loopHelper AddWhile model node text child1 child2)
+                (loopHelper WhileNode model node text child1 child2)
             , drawTree model child2
             ]
                 |> vertical
 
         ForEach text child1 child2 ->
             [ collageWithTopArrow
-                (loopHelper AddForEach model node text child1 child2)
+                (loopHelper ForEachNode model node text child1 child2)
             , drawTree model child2
             ]
                 |> vertical
@@ -876,17 +876,17 @@ noteBox id label =
             multilineEditableTextBox id nodeType label minW minH minW
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 13 )
+            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 15 )
 
         nodeType =
             if id == 4 then
-                AddPreCondition
+                PreConditionNode
 
             else if id == 5 then
-                AddPostCondition
+                PostConditionNode
 
             else
-                Debug.log "Tried to create non pre- or postcondition notebox. Using postcondition instead " AddPostCondition
+                Debug.log "Tried to create non pre- or postcondition notebox. Using postcondition instead " PostConditionNode
 
         conditionType =
             if id == 4 then
@@ -926,7 +926,7 @@ noteBox id label =
                 |> align topLeft
     in
     shape
-        |> name (Debug.toString conditionType)
+        |> name conditionType
 
 
 addConditions : Model -> Collage Msg -> Collage Msg
@@ -941,7 +941,6 @@ addConditions model tree =
                     Debug.log ("Coordinate not found " ++ name) ( 0, 0 )
     in
     tree
-        -- |> shift (correctionCoordinates "Start")
         |> shift ( 6.5 * unit, 0 )
         |> stackTwo
             (flowchartNameBox model.flowchartName

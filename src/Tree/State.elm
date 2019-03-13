@@ -1,4 +1,4 @@
-module Tree.State exposing (ChangeTree(..), FillEmpty(..), Model, Msg(..), defaultModel, init, unpackId, update)
+module Tree.State exposing (ChangeTree(..), Model, Msg(..), NodeType(..), defaultModel, init, unpackId, update)
 
 {--
 
@@ -85,7 +85,7 @@ unpackId highlightedBox =
 type Msg
     = UpdateName Content
     | UpdateContent Id Content
-    | FillEmpty FillEmpty Id
+    | FillEmpty NodeType Id
     | ChangeTree ChangeTree Id
     | HighlightBox Id
     | DehighlightBox Id
@@ -93,14 +93,14 @@ type Msg
     | BlurResult (Result Error ())
 
 
-type FillEmpty
-    = AddStatement
-    | AddIf
-    | AddWhile
-    | AddForEach
-    | AddPreCondition
-    | AddPostCondition
-    | AddFlowchartName
+type NodeType
+    = StatementNode
+    | IfNode
+    | WhileNode
+    | ForEachNode
+    | PreConditionNode
+    | PostConditionNode
+    | FlowchartNameNode
 
 
 type ChangeTree
@@ -231,15 +231,15 @@ updateContent newContent idToFind model =
 --}
 
 
-fillEmpty : Id -> FillEmpty -> Id -> Tree -> Tree
+fillEmpty : Id -> NodeType -> Id -> Tree -> Tree
 fillEmpty currentId newNodeType idToFind node =
     let
         onTheRightEmptyNode child =
             case newNodeType of
-                AddStatement ->
+                StatementNode ->
                     Statement "" child
 
-                AddIf ->
+                IfNode ->
                     If ""
                         { id = currentId
                         , basicTree =
@@ -253,7 +253,7 @@ fillEmpty currentId newNodeType idToFind node =
                         }
                         child
 
-                AddWhile ->
+                WhileNode ->
                     While ""
                         { id = currentId
                         , basicTree =
@@ -264,7 +264,7 @@ fillEmpty currentId newNodeType idToFind node =
                         }
                         child
 
-                AddForEach ->
+                ForEachNode ->
                     ForEach ""
                         { id = currentId
                         , basicTree =
