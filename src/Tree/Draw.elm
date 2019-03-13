@@ -133,10 +133,9 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                         ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
 
         ( _, wc, hc ) =
-            Debug.log "cw, mw, ch" <|
-                boxDimensions
-                    -- Note: read the string backwards, so newlines indicate the *beginning* of a new line
-                    (List.reverse <| String.toList content)
+            boxDimensions
+                -- Note: read the string backwards, so newlines indicate the *beginning* of a new line
+                (List.reverse <| String.toList content)
 
         ( w, h ) =
             ( max minBoxWidth wc, max minBoxHeight hc )
