@@ -298,18 +298,20 @@ statementBoxShape w =
 statementBoxEditable : Id -> String -> Collage Msg
 statementBoxEditable id label =
     let
+        maxWidth =
+            22
+
         ( minW, minH ) =
             ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddStatement label minW minH 22
+            multilineEditableTextBox id AddStatement label minW minH maxWidth
 
         ( w, h ) =
-            -- TODO use wta and hta
-            ( minW, minH )
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
 
         htmlBox =
-            html ( w, h ) <|
+            html ( w, h * 2 ) <|
                 toUnstyled htmlTextArea
     in
     [ htmlBox
@@ -348,11 +350,9 @@ ifBoxEditable id label =
             ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            -- Debug.log "(_, w, h): " <|
             multilineEditableTextBox id AddIf label minW minH maxWidth
 
         ( w, h ) =
-            -- Debug.log "(w,h) :"
             ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
 
         htmlBox =
