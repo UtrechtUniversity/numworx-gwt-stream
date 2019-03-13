@@ -259,21 +259,21 @@ boxNonEditable label nodeType =
             max (width text) 40
 
         h =
-            1
+            19
 
         shape =
             case nodeType of
                 AddStatement ->
-                    statementBoxShape w
+                    statementBoxShape w h
 
                 AddIf ->
-                    ifBoxShape w 19
+                    ifBoxShape w h
 
                 AddWhile ->
-                    whileBoxShape w
+                    loopBoxShape AddWhile w h
 
                 AddForEach ->
-                    forEachBoxShape w
+                    loopBoxShape AddForEach w h
 
                 _ ->
                     Debug.log "Tried to create non editable box for Precondition, Postcondition or FlowchartName. Drawing ellipse instead: " filled (uniform red) (ellipse 4 1)
@@ -286,9 +286,9 @@ voidBox =
     spacer 0 0
 
 
-statementBoxShape : Float -> Collage msg
-statementBoxShape w =
-    rectangle (w + 2 * unit) (4 * unit)
+statementBoxShape : Float -> Float -> Collage msg
+statementBoxShape w h =
+    rectangle (w + 2 * unit) (h + 3 * unit)
         |> styled
             ( uniform (rgb255 244 171 211)
             , solid thin (uniform black)
@@ -308,14 +308,14 @@ statementBoxEditable id label =
             multilineEditableTextBox id AddStatement label minW minH maxWidth
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 13 )
 
         htmlBox =
-            html ( w, h * 2 ) <|
+            html ( w, h * 1.3 ) <|
                 toUnstyled htmlTextArea
     in
     [ htmlBox
-    , statementBoxShape w
+    , statementBoxShape w h
     ]
         |> stack
 
@@ -437,95 +437,62 @@ ifHelper model node text child1 child2 child3 =
 
 {--
 
-  The While and the ForEach have the same structure, but differ in their main box shape. First the editable boxes will be made, then a generalised "loopHelper" to create the structure around them.
+The While and the ForEach have the same structure, so I generalised them to 'loop'.
 
 --}
 
 
-whileBoxShape : Float -> Collage Msg
-whileBoxShape w =
+loopBoxShape : FillEmpty -> Float -> Float -> Collage Msg
+loopBoxShape nodeType w h =
     let
+        boxColor =
+            case nodeType of
+                AddWhile ->
+                    rgb255 181 199 245
+
+                AddForEach ->
+                    rgb255 255 232 255
+
+                _ ->
+                    Debug.log "Tried to instantiate a loopBox of a node type that is not While or ForEach. Proceeding with white: " <| rgb255 0 0 0
+
         points =
-            [ ( 0, unit * 1.5 )
-            , ( 0, -(unit * 1.5) )
-            , ( (w + unit) / 2, -(unit * 2.5) )
-            , ( w + unit, -(unit * 1.5) )
-            , ( w + unit, unit * 1.5 )
+            [ ( 0, h )
+            , ( 0, -h )
+            , ( (w + unit) / 2, -(h * 1.5) )
+            , ( w + unit, -h )
+            , ( w + unit, h )
             ]
     in
     polygon points
         |> styled
-            ( uniform (rgb255 181 199 245)
+            ( uniform boxColor
             , solid thin (uniform black)
             )
         |> center
 
 
-whileBoxEditable : Id -> String -> Collage Msg
-whileBoxEditable id label =
+loopBoxEditable : FillEmpty -> Id -> String -> Collage Msg
+loopBoxEditable nodeType id label =
     let
         maxCharacters =
             25
 
-        characterWidth =
-            min maxCharacters <| max (String.length label) 5
-
-        w =
-            max (unit * 0.85 * toFloat characterWidth) 70
+        ( minW, minH ) =
+            ( 10, 1 )
 
         ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddWhile label 10 1 maxCharacters
+            multilineEditableTextBox id nodeType label minW minH maxCharacters
+
+        ( w, h ) =
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 5 )
 
         htmlBox =
-            html ( w, 2 * unit ) <|
+            html ( w, h * 2 ) <|
                 toUnstyled htmlTextArea
     in
     [ htmlBox
-    , whileBoxShape w
-    ]
-        |> stack
-
-
-forEachBoxShape : Float -> Collage Msg
-forEachBoxShape w =
-    let
-        points =
-            [ ( 0, unit * 1.5 )
-            , ( 0, -(unit * 1.5) )
-            , ( (w + unit) / 2, -(unit * 2.5) )
-            , ( w + unit, -(unit * 1.5) )
-            , ( w + unit, unit * 1.5 )
-            ]
-    in
-    polygon points
-        |> styled
-            ( uniform (rgb255 255 232 255)
-            , solid thin (uniform black)
-            )
-        |> center
-
-
-forEachBoxEditable : Id -> String -> Collage Msg
-forEachBoxEditable id label =
-    let
-        maxCharacters =
-            25
-
-        characterWidth =
-            min maxCharacters <| max (String.length label) 5
-
-        ( htmlTextArea, wta, hta ) =
-            multilineEditableTextBox id AddForEach label 10 1 maxCharacters
-
-        w =
-            max (unit * 0.85 * toFloat characterWidth) 70
-
-        htmlBox =
-            html ( w, 2 * unit ) <|
-                toUnstyled htmlTextArea
-    in
-    [ htmlBox
-    , forEachBoxShape w
+    , loopBoxShape nodeType w h
     ]
         |> stack
 
@@ -533,20 +500,20 @@ forEachBoxEditable id label =
 loopHelper : FillEmpty -> Model -> Tree -> String -> Tree -> Tree -> Collage Msg
 loopHelper nodeType model node text child1 child2 =
     let
-        ( loopBox, typeLabel, ( leftTag, bottomTag ) ) =
+        ( typeLabel, ( leftTag, bottomTag ) ) =
             case nodeType of
                 AddWhile ->
                     -- The spaces in the tags are an ugly fix, I'm sorry
-                    ( whileBoxEditable, "while", ( "false   ", "   true" ) )
+                    ( "while", ( "false   ", "   true" ) )
 
                 AddForEach ->
-                    ( forEachBoxEditable, "for each", ( "done   ", "  repeat" ) )
+                    ( "for each", ( "done   ", "  repeat" ) )
 
                 a ->
-                    Debug.log ("Tried to create loopHelper with non-loop type: " ++ Debug.toString a ++ " continueing without change.") ( whileBoxEditable, "report", ( "please", "this" ) )
+                    Debug.log ("Tried to create loopHelper with non-loop type: " ++ Debug.toString a ++ " continueing without change.") ( "report", ( "this", "please" ) )
 
         decoratedLoopBox =
-            loopBox node.id text
+            loopBoxEditable nodeType node.id text
                 |> imposeAt right
                     (arrowTriangle
                         |> rotate (pi * 3 / 2)
