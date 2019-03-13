@@ -107,15 +107,16 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
         -- Returns (currentWidth, maxWidth, height)
         boxDimensions s =
             case s of
+                -- Note: The minimum width needs to be one bigger than the actual width, because otherwise a scrollbar would appear upon enter
                 [] ->
-                    ( 0, 0, 1 )
+                    ( 1, 1, 1 )
 
                 c :: [] ->
                     if c == '\n' then
-                        ( 0, 0, 2 )
+                        ( 1, 1, 2 )
 
                     else
-                        ( characterWidth c, characterWidth c, 1 )
+                        ( characterWidth c + 1, characterWidth c + 1, 1 )
 
                 c :: cs ->
                     let
@@ -123,7 +124,7 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                             boxDimensions cs
                     in
                     if c == '\n' then
-                        ( 0, mws, hs + 1 )
+                        ( 1, mws, hs + 1 )
 
                     else if cws + characterWidth c > maxBoxWidth then
                         ( characterWidth c, mws, hs + 1 )
@@ -132,8 +133,10 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                         ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
 
         ( _, wc, hc ) =
-            boxDimensions
-                (String.toList content)
+            Debug.log "cw, mw, ch" <|
+                boxDimensions
+                    -- Note: read the string backwards, so newlines indicate the *beginning* of a new line
+                    (List.reverse <| String.toList content)
 
         ( w, h ) =
             ( max minBoxWidth wc, max minBoxHeight hc )
