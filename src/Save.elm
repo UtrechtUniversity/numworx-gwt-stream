@@ -1,4 +1,4 @@
-module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, subscriptions, toJson, treeDecoder, update, uploadButton, view)
+module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, debug, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, subscriptions, toJson, treeDecoder, update, uploadButton, view)
 
 {--
 
@@ -21,6 +21,7 @@ import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
 import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
 import Tree.Core as Tree exposing (..)
+import Tree.Draw exposing (treeWithConditions)
 import Tree.State as State exposing (..)
 
 
@@ -166,6 +167,35 @@ copyJavaCommentsButton =
     button
         [ onClick GenerateJavaComments ]
         [ text "Convert to Java comments" ]
+
+
+
+{--
+
+  Debugging
+
+--}
+
+
+debug : Model -> List (Html.Styled.Attribute State.Msg) -> Html State.Msg
+debug model =
+    -- Show decodedModel in a tree and visually check for diffs
+    let
+        decodingModel () =
+            model
+                |> toJson
+                |> Debug.log "Debugmode: json"
+                |> fromJson
+
+        decodedModel () =
+            case decodingModel () of
+                Just newModel ->
+                    newModel
+
+                Nothing ->
+                    Debug.log "Could not unpack decoded model, so using default model instead: " defaultModel
+    in
+    treeWithConditions (decodedModel ())
 
 
 

@@ -23,15 +23,13 @@ main =
 
 
 type alias Model =
-    { tree : State.Model
-    , jsonDebugView : Maybe (Html State.Msg)
+    { state : State.Model
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { tree = State.init
-      , jsonDebugView = Nothing
+    ( { state = State.init
       }
     , Cmd.none
     )
@@ -42,42 +40,31 @@ type Msg
     | Save Save.Msg
 
 
-
--- | GenerateJsonDebug
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tree treeMsg ->
             let
                 ( treeModel, treeCmd ) =
-                    State.update treeMsg model.tree
+                    State.update treeMsg model.state
             in
-            ( { model | tree = treeModel }
+            ( { model | state = treeModel }
             , Cmd.map Tree treeCmd
             )
 
         Save saveMsg ->
             let
                 ( saveModel, saveCmd ) =
-                    Save.update saveMsg model.tree
+                    Save.update saveMsg model.state
             in
-            ( { model | tree = saveModel }
+            ( { model | state = saveModel }
             , Cmd.map Save saveCmd
             )
 
 
-
--- GenerateJsonDebug ->
---     ( { model | jsonDebugView = Just (Save.debug model.tree) }
---     , Cmd.none
---     )
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.map Save (Save.subscriptions model.tree)
+    Sub.map Save (Save.subscriptions model.state)
 
 
 view : Model -> Html.Html Msg
@@ -100,31 +87,29 @@ view model =
                 ]
             ]
             [ map Save
-                (Save.view model.tree)
+                (Save.view model.state)
             , map Tree
-                (Draw.treeWithConditions model.tree [ treeLayout ])
+                (Draw.treeWithConditions model.state [ treeLayout ])
             ]
 
-        --, jsonDebug model
+        -- , jsonDebug model
         ]
         |> toUnstyled
 
 
 
--- jsonDebug : Model -> Html Msg
--- jsonDebug model =
---     let
---         unpackedView =
---             case model.jsonDebugView of
---                 Just view ->
---                     view
---
---                 Nothing ->
---                     div [] []
---     in
---     div
---         [ style [ ( "top", "10px" ) ] ]
---         [ button [ onClick GenerateJsonDebug ] [ text "Generate Json" ]
---         , br [] []
---         , Html.map Tree unpackedView
---         ]
+-- Show a encoded and then decoded model at the right of the original flowchart
+-- For debugging purposes only
+
+
+jsonDebug : Model -> Html Msg
+jsonDebug model =
+    let
+        debugTreeLayout =
+            css [ position absolute, right (px 0) ]
+    in
+    div
+        [ css [ top (px 10) ] ]
+        [ map Tree
+            (Save.debug model.state [ debugTreeLayout ])
+        ]
