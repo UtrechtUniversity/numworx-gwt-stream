@@ -777,13 +777,18 @@ addHitbox highlightedBox id nodeBox =
 
         trigger box =
             box
-                |> (if id == unpackId highlightedBox then
-                        -- In this case, a highlightingoverlay blocks this hitbox, causing the onMouseEnter to trigger multiple times
-                        identity
+                |> (case highlightedBox of
+                        Just highlightId ->
+                            if id == highlightId then
+                                -- In this case, a highlightingoverlay blocks this hitbox, causing the onMouseEnter to trigger multiple times
+                                identity
 
-                    else
-                        -- 'always' is used to throw away the entrance point
-                        onMouseEnter (always (HighlightBox id))
+                            else
+                                -- 'always' is used to throw away the entrance point
+                                onMouseEnter (always (HighlightBox id))
+
+                        Nothing ->
+                            Debug.log "Tried to highlight Nothing, highlighting nothing instead " onMouseEnter (always (HighlightBox id))
                    )
                 |> onMouseLeave
                     (always (DehighlightBox id))
@@ -795,11 +800,16 @@ addOverlayMenu : Maybe Id -> Tree -> Collage Msg -> Collage Msg
 addOverlayMenu highlightedBox node nodeBox =
     nodeBox
         |> addHitbox highlightedBox node.id
-        |> (if node.id == unpackId highlightedBox then
-                addHighlightOverlay node
+        |> (case highlightedBox of
+                Just highlightId ->
+                    if node.id == highlightId then
+                        addHighlightOverlay node
 
-            else
-                identity
+                    else
+                        identity
+
+                Nothing ->
+                    Debug.log ""
            )
 
 

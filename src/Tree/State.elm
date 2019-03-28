@@ -1,4 +1,4 @@
-module Tree.State exposing (ChangeTree(..), Model, Msg(..), NodeType(..), defaultModel, init, unpackId, update)
+module Tree.State exposing (ChangeTree(..), Model, Msg(..), NodeType(..), defaultModel, init, update)
 
 {--
 
@@ -64,18 +64,6 @@ defaultModel =
         , tree = { id = 0, basicTree = End }
         , currentId = 0
     }
-
-
-unpackId : Maybe Id -> Id
-unpackId highlightedBox =
-    -- highlightedBox is used in comparisons with a nodes own Id. Translating "Nothing" to -1 ensures these comparisons will always come up false.
-    -- There's got to be a neater way to do this
-    case highlightedBox of
-        Just highlightedBoxId ->
-            highlightedBoxId
-
-        Nothing ->
-            -1
 
 
 
@@ -480,4 +468,4 @@ dehighlightBox oldId currentId =
                 Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ " while the highlightedBox was " ++ String.fromInt id) Nothing
 
         Nothing ->
-            Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ "while nothing was highlighted") Nothing
+            Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ " while nothing was highlighted") Nothing
