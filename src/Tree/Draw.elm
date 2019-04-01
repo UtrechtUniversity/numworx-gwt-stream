@@ -788,7 +788,7 @@ addHitbox highlightedBox id nodeBox =
                                 onMouseEnter (always (HighlightBox id))
 
                         Nothing ->
-                            Debug.log "Tried to highlight Nothing, highlighting nothing instead " onMouseEnter (always (HighlightBox id))
+                            onMouseEnter (always (HighlightBox id))
                    )
                 |> onMouseLeave
                     (always (DehighlightBox id))
@@ -809,7 +809,7 @@ addOverlayMenu highlightedBox node nodeBox =
                         identity
 
                 Nothing ->
-                    Debug.log ""
+                    identity
            )
 
 

@@ -14,6 +14,7 @@ import Base64 exposing (decode)
 import Color exposing (white)
 import Css exposing (..)
 import Debug exposing (log)
+import File.Download as Download exposing (string)
 import Html.Styled exposing (Html, a, br, button, div, input, li, text, ul)
 import Html.Styled.Attributes exposing (autofocus, class, css, href, id, placeholder, style, type_)
 import Html.Styled.Events exposing (on, onClick, onInput)
@@ -29,6 +30,7 @@ type Msg
     = JsonSelected String
     | JsonRead JsonPortData
     | GenerateJavaComments
+    | DownloadJson
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,6 +75,9 @@ update msg model =
               }
             , downloadToast newJavaComments
             )
+
+        DownloadJson ->
+            ( model, Download.string (model.flowchartName ++ ".flow") "application/json" (toJson model) )
 
 
 subscriptions : Model -> Sub Msg
@@ -133,16 +138,7 @@ view model =
 
 downloadButton : Model -> Html Msg
 downloadButton model =
-    a
-        [ type_ "button"
-
-        -- TODO removed encodeUri, does this still work?
-        , href <| "data:text/plain;charset=utf-8," ++ toJson model
-
-        -- Trigger modal upon downloading
-        -- , downloadAs (model.flowchartName ++ ".flow")
-        ]
-        [ button [] [ text "Download" ] ]
+    button [ onClick DownloadJson ] [ text "Download" ]
 
 
 uploadButton : Html Msg
