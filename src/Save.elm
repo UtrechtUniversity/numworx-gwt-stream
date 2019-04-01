@@ -14,23 +14,29 @@ import Base64 exposing (decode)
 import Color exposing (white)
 import Css exposing (..)
 import Debug exposing (log)
+import File exposing (File)
 import File.Download as Download exposing (string)
+import File.Select as Select
 import Html.Styled exposing (Html, a, br, button, div, input, li, text, ul)
-import Html.Styled.Attributes exposing (autofocus, class, css, href, id, placeholder, style, type_)
+import Html.Styled.Attributes exposing (autofocus, class, css, href, id, multiple, placeholder, style, type_)
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
 import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
+import Task exposing (perform)
 import Tree.Core as Tree exposing (..)
 import Tree.Draw exposing (treeWithConditions)
 import Tree.State as State exposing (..)
 
 
 type Msg
-    = JsonSelected String
-    | JsonRead JsonPortData
+    = JsonSelected String -- TODO Delete
+    | JsonRead JsonPortData -- TODO Delete
     | GenerateJavaComments
     | DownloadJson
+    | UploadRequested
+    | UploadLoaded File
+    | UploadRead String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -77,7 +83,25 @@ update msg model =
             )
 
         DownloadJson ->
-            ( model, Download.string (model.flowchartName ++ ".flow") "application/json" (toJson model) )
+            ( model, Download.string (model.flowchartName ++ ".flow") "application/flow" (toJson model) )
+
+        UploadRequested ->
+            ( model, Select.file [ "application/flow" ] UploadLoaded )
+
+        UploadLoaded file ->
+            ( model, Task.perform UploadRead (File.toString file) )
+
+        UploadRead string ->
+            let
+                updateModel oldModel =
+                    case fromJson string of
+                        Just newModel ->
+                            newModel
+
+                        Nothing ->
+                            oldModel
+            in
+            ( updateModel model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -138,24 +162,21 @@ view model =
 
 downloadButton : Model -> Html Msg
 downloadButton model =
-    button [ onClick DownloadJson ] [ text "Download" ]
+    button
+        [ onClick DownloadJson ]
+        [ text "Download" ]
 
 
 uploadButton : Html Msg
 uploadButton =
-    let
-        ownId =
-            "jsonUploadButton"
-    in
-    div [ class "jsonWrapper" ]
-        [ input
-            [ type_ "file"
-            , id ownId
-            , on "change"
-                (succeed <| JsonSelected ownId)
-            ]
-            []
-        ]
+    button
+        [ onClick UploadRequested ]
+        [ text "Upload" ]
+
+
+fileReader : File -> Cmd Msg
+fileReader file =
+    Task.perform UploadRead (File.toString file)
 
 
 copyJavaCommentsButton : Html Msg
