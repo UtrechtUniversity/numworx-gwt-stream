@@ -1,4 +1,4 @@
-module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, debug, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, subscriptions, toJson, treeDecoder, update, uploadButton, view)
+module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, debug, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, toJson, treeDecoder, update, uploadButton, view)
 
 {--
 
@@ -30,9 +30,7 @@ import Tree.State as State exposing (..)
 
 
 type Msg
-    = JsonSelected String -- TODO Delete
-    | JsonRead JsonPortData -- TODO Delete
-    | GenerateJavaComments
+    = GenerateJavaComments
     | DownloadJson
     | UploadRequested
     | UploadLoaded File
@@ -42,34 +40,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        JsonSelected inputBoxId ->
-            ( model
-            , fileSelected inputBoxId
-            )
-
-        JsonRead data ->
-            let
-                decoded64String =
-                    -- This is unstable code
-                    case Base64.decode <| String.dropLeft 13 data.contents of
-                        Ok jsonModel ->
-                            jsonModel
-
-                        Err error ->
-                            Debug.log "Couldn't base64 decode upload" error
-
-                updateModel oldModel =
-                    case fromJson decoded64String of
-                        Just newModel ->
-                            newModel
-
-                        Nothing ->
-                            oldModel
-            in
-            ( updateModel model
-            , Cmd.none
-            )
-
         GenerateJavaComments ->
             let
                 newJavaComments =
@@ -102,11 +72,6 @@ update msg model =
                             oldModel
             in
             ( updateModel model, Cmd.none )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    fileContentRead JsonRead
 
 
 

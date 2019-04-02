@@ -64,7 +64,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.map Save (Save.subscriptions model.state)
+    Sub.none
 
 
 view : Model -> Html.Html Msg
