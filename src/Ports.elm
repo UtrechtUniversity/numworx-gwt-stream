@@ -1,23 +1,12 @@
-port module Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
+port module Ports exposing (downloadToast)
 
 {--
 
-  Allows file upload
+  Allows interaction with JavaScript
+  Originally used for file upload, now only for a modal
   Great thanks to the tutorial at Paramander, written by Tolga Paksoy https://www.paramander.com/blog/using-ports-to-deal-with-files-in-elm-0-17
 
 --}
-
-
-type alias JsonPortData =
-    { contents : String
-    , filename : String
-    }
-
-
-port fileContentRead : (JsonPortData -> msg) -> Sub msg
-
-
-port fileSelected : String -> Cmd msg
 
 
 port downloadToast : String -> Cmd msg
