@@ -369,7 +369,7 @@ ifHelper : Model -> Tree -> String -> Tree -> Tree -> Tree -> Collage Msg
 ifHelper model node text child1 child2 child3 =
     let
         ( leftPiece, rightPiece ) =
-            ( drawTree model child1, drawTree model child2 )
+            ( drawTree model child1 |> debug, drawTree model child2 )
 
         maxHeight =
             max (height leftPiece) (height rightPiece) + unit * 5
@@ -400,15 +400,22 @@ ifHelper model node text child1 child2 child3 =
                 |> horizontal
                 |> shift ( -midLength / 2, 0 )
 
+        -- The width of the arrows in the figure
         midLength =
-            envelope Left rightPiece
-                + envelope Right leftPiece
-                + widthMidGap
+            max (envelope Left rightPiece + envelope Right leftPiece + widthMidGap) (width decoratedTextBox + 2 * unit)
 
         horizontalLine =
             midLength
                 |> line
                 |> traced defaultLineStyle
+
+        decoratedTextBox =
+            ifBoxEditable node.id text
+                |> addOverlayMenu model.highlightedBox node
+                |> imposeAt topLeft
+                    (labelText "if"
+                        |> align left
+                    )
     in
     [ horizontalLine
         |> imposeAt topRight
@@ -423,14 +430,7 @@ ifHelper model node text child1 child2 child3 =
     , horizontalLine
     ]
         |> vertical
-        |> at top
-            (ifBoxEditable node.id text
-                |> addOverlayMenu model.highlightedBox node
-                |> imposeAt topLeft
-                    (labelText "if"
-                        |> align left
-                    )
-            )
+        |> at top decoratedTextBox
 
 
 
@@ -533,7 +533,7 @@ loopHelper nodeType model node text child1 child2 =
                     )
 
         widthInner =
-            max (20 * unit) (width <| drawTree model child1)
+            max (width decoratedLoopBox + 2 * unit) (width <| drawTree model child1)
 
         inner =
             [ [ drawTree model child1
