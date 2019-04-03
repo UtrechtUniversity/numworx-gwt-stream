@@ -22,7 +22,7 @@ import Html.Styled.Attributes exposing (autofocus, class, css, href, id, multipl
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
-import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
+import Ports exposing (downloadToast)
 import Task exposing (perform)
 import Tree.Core as Tree exposing (..)
 import Tree.Draw exposing (treeWithConditions)

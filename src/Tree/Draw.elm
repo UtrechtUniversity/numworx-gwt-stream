@@ -56,10 +56,15 @@ gap =
     spacer unit unit
 
 
-arrow : Collage msg
-arrow =
+
+-- Give '0' for a default arrow
+
+
+arrow : Float -> Collage msg
+arrow length =
     vertical
-        [ line (unit * 2.5)
+        [ line
+            (max length (unit * 2.5))
             |> traced defaultLineStyle
             |> rotate (pi / 2)
         , arrowTriangle
@@ -73,11 +78,11 @@ arrowTriangle =
         |> rotate pi
 
 
-collageWithTopArrow : Collage msg -> Collage msg
-collageWithTopArrow collage =
-    --
-    [ collage |> align top
-    , arrow |> align bottom
+addBottomArrow : Float -> Collage msg -> Collage msg
+addBottomArrow length collage =
+    -- Give '0' for a default arrow
+    [ collage |> align bottom
+    , arrow length |> align top
     ]
         |> stack
 
@@ -369,7 +374,9 @@ ifHelper : Model -> Tree -> String -> Tree -> Tree -> Tree -> Collage Msg
 ifHelper model node text child1 child2 child3 =
     let
         ( leftPiece, rightPiece ) =
-            ( drawTree model child1, drawTree model child2 )
+            ( drawTree model child1
+            , drawTree model child2
+            )
 
         maxHeight =
             max (height leftPiece) (height rightPiece) + unit * 5
@@ -400,37 +407,50 @@ ifHelper model node text child1 child2 child3 =
                 |> horizontal
                 |> shift ( -midLength / 2, 0 )
 
+        -- The width of the arrows in the figure
         midLength =
-            envelope Left rightPiece
-                + envelope Right leftPiece
-                + widthMidGap
+            max (envelope Left rightPiece + envelope Right leftPiece + widthMidGap) (width decoratedTextBox + 2 * unit)
 
-        horizontalLine =
+        topArrows =
             midLength
                 |> line
                 |> traced defaultLineStyle
-    in
-    [ horizontalLine
-        |> imposeAt topRight
-            (labelText "true"
-                |> align bottomRight
-            )
-        |> imposeAt topLeft
-            (labelText "false"
-                |> align bottomLeft
-            )
-    , midPiece
-    , horizontalLine
-    ]
-        |> vertical
-        |> at top
-            (ifBoxEditable node.id text
+                |> imposeAt topRight
+                    (labelText "true"
+                        |> align bottomRight
+                    )
+                |> imposeAt topLeft
+                    (labelText "false"
+                        |> align bottomLeft
+                    )
+                |> align left
+                |> addBottomArrow (height decoratedTextBox / 2 + 2 * unit)
+                |> align topRight
+                |> imposeAt right
+                    (arrow (height decoratedTextBox / 2 + 2 * unit)
+                        |> align top
+                    )
+                |> center
+
+        bottomLine =
+            midLength
+                |> line
+                |> traced defaultLineStyle
+
+        decoratedTextBox =
+            ifBoxEditable node.id text
                 |> addOverlayMenu model.highlightedBox node
                 |> imposeAt topLeft
                     (labelText "if"
                         |> align left
                     )
-            )
+    in
+    [ topArrows
+    , midPiece
+    , bottomLine
+    ]
+        |> vertical
+        |> at top decoratedTextBox
 
 
 
@@ -533,33 +553,27 @@ loopHelper nodeType model node text child1 child2 =
                     )
 
         widthInner =
-            max (20 * unit) (width <| drawTree model child1)
+            max (width decoratedLoopBox + 4 * unit) (width <| drawTree model child1)
 
         inner =
-            [ [ drawTree model child1
-              , line unit
-                    |> traced defaultLineStyle
-                    |> rotate (pi / 2)
-              ]
-                |> vertical
-            , spacer widthInner 0
+            [ arrow (height decoratedLoopBox / 2)
+            , drawTree model child1
             ]
-                |> stack
+                |> vertical
 
         ( topInner, leftInner, ( downInner, rightInner ) ) =
             -- Outerlines
             ( envelope Up inner + unit
-            , envelope Left inner + unit
-            , ( envelope Down inner + unit
-              , envelope Right inner + unit
+            , max (envelope Left inner + unit) (width decoratedLoopBox / 2 + 2 * unit)
+            , ( envelope Down inner
+              , max (envelope Right inner + unit) (width decoratedLoopBox / 2 + 2 * unit)
               )
             )
 
         superPath =
             -- Start below child, then goes counterclockwise
             [ -- bridge the airgap around inner
-              ( 0, -downInner + unit )
-            , ( 0, -downInner )
+              ( 0, -downInner )
             , ( rightInner, -downInner )
             , ( rightInner, topInner )
             , ( rightInner, topInner )
@@ -575,6 +589,7 @@ loopHelper nodeType model node text child1 child2 =
     ]
         |> stack
         |> at top decoratedLoopBox
+        |> addBottomArrow 0
 
 
 
@@ -591,23 +606,20 @@ drawTree model node =
         Start child ->
             [ stubBox "Start"
                 |> addOverlayMenu model.highlightedBox node
+                |> addBottomArrow 0
             , drawTree model child
             ]
                 |> vertical
 
         End ->
-            [ collageWithTopArrow
-                (stubBox "End"
-                    |> addOverlayMenu model.highlightedBox node
-                )
-            ]
-                |> vertical
+            -- TODO simplify, remove vertical
+            stubBox "End"
+                |> addOverlayMenu model.highlightedBox node
 
         Empty child ->
-            [ collageWithTopArrow
-                (emptyBox node.id
-                    |> addOverlayMenu model.highlightedBox node
-                )
+            [ emptyBox node.id
+                |> addOverlayMenu model.highlightedBox node
+                |> addBottomArrow 0
             , drawTree model child
             ]
                 |> vertical
@@ -616,31 +628,28 @@ drawTree model node =
             voidBox
 
         Statement text child ->
-            [ collageWithTopArrow
-                (statementBoxEditable node.id text
-                    |> addOverlayMenu model.highlightedBox node
-                )
+            [ statementBoxEditable node.id text
+                |> addOverlayMenu model.highlightedBox node
+                |> addBottomArrow 0
             , drawTree model child
             ]
                 |> vertical
 
         If text child1 child2 child3 ->
-            [ collageWithTopArrow
-                (ifHelper model node text child1 child2 child3)
+            [ ifHelper model node text child1 child2 child3
+                |> addBottomArrow 0
             , drawTree model child3
             ]
                 |> vertical
 
         While text child1 child2 ->
-            [ collageWithTopArrow
-                (loopHelper WhileNode model node text child1 child2)
+            [ loopHelper WhileNode model node text child1 child2
             , drawTree model child2
             ]
                 |> vertical
 
         ForEach text child1 child2 ->
-            [ collageWithTopArrow
-                (loopHelper ForEachNode model node text child1 child2)
+            [ loopHelper ForEachNode model node text child1 child2
             , drawTree model child2
             ]
                 |> vertical
@@ -951,7 +960,7 @@ addConditions model tree =
                     Debug.log ("Coordinate not found " ++ name) ( 0, 0 )
     in
     tree
-        |> shift ( 6.5 * unit, 0 )
+        |> shift ( 6.5 * unit, -2.6 * unit )
         |> stackTwo
             (flowchartNameBox model.flowchartName
                 |> align right
@@ -964,6 +973,7 @@ addConditions model tree =
             )
         |> connect [ ( "Start", right ), ( "Precondition", left ) ] (dash verythin (uniform black))
         |> shift (correctionCoordinates "End")
+        |> shift ( 0, 2.6 * unit )
         |> stackTwo
             (noteBox 5 model.postcondition
                 |> align bottomLeft
