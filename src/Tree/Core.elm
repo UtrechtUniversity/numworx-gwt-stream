@@ -88,7 +88,7 @@ toJavaComment indent tree =
             String.concat
                 [ indentation
                 , "// "
-                , content
+                , String.replace "\n" ";\n// " content
                 , "\n\n"
                 , toJavaComment indent child
                 ]
@@ -96,7 +96,7 @@ toJavaComment indent tree =
         If content child1 child2 child3 ->
             String.concat
                 [ indentation
-                , "// If: " ++ content
+                , "// If: " ++ String.replace "\n" "_" content
                 , "\n\n"
                 , toJavaComment (indent + 1) child1
                 , toJavaComment (indent + 1) child2
@@ -106,7 +106,7 @@ toJavaComment indent tree =
         While content child1 child2 ->
             String.concat
                 [ indentation
-                , "// While: " ++ content
+                , "// While: " ++ String.replace "\n" "_" content
                 , "\n\n"
                 , toJavaComment (indent + 1) child1
                 , toJavaComment indent child2
@@ -115,7 +115,7 @@ toJavaComment indent tree =
         ForEach content child1 child2 ->
             String.concat
                 [ indentation
-                , "// For each: " ++ content
+                , "// For each: " ++ String.replace "\n" "_" content
                 , "\n\n"
                 , toJavaComment (indent + 1) child1
                 , toJavaComment indent child2
