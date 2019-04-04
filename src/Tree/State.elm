@@ -359,8 +359,19 @@ newBelow currentId currentNode =
                 , basicTree = Empty child
                 }
 
-        a ->
-            Debug.log ("Tried to add an element below IfElse, While or ForEach. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") a
+        If content leftChild rightChild belowChild ->
+            If content
+                leftChild
+                rightChild
+                { id = currentId
+                , basicTree = Empty belowChild
+                }
+
+        While content innerChild belowChild ->
+            While content innerChild { id = currentId, basicTree = Empty belowChild }
+
+        ForEach content innerChild belowChild ->
+            ForEach content innerChild { id = currentId, basicTree = Empty belowChild }
 
 
 newTrue : Id -> Tree -> BasicTree

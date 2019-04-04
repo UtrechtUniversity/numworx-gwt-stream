@@ -436,6 +436,7 @@ ifHelper model node text child1 child2 child3 =
             midLength
                 |> line
                 |> traced defaultLineStyle
+                |> addSeparateBelowPlus model node
 
         decoratedTextBox =
             ifBoxEditable node.id text
@@ -583,6 +584,7 @@ loopHelper nodeType model node text child1 child2 =
             ]
                 |> path
                 |> traced defaultLineStyle
+                |> addSeparateBelowPlus model node
     in
     [ superPath
     , inner
@@ -813,6 +815,34 @@ addOverlayMenu highlightedBox node nodeBox =
                 Just highlightId ->
                     if node.id == highlightId then
                         addHighlightOverlay node
+
+                    else
+                        identity
+
+                Nothing ->
+                    identity
+           )
+
+
+addSeparateBelowPlus : Model -> Tree -> Collage Msg -> Collage Msg
+addSeparateBelowPlus model node nodeBox =
+    -- Similar to addOverlayMenu
+    -- made for the if, while and foreach
+    -- should one of these become a child of a while or foreach,
+    --  then now there is a way to add a below child for it
+    let
+        addButton id =
+            imposeAt bottom
+                (plusBox
+                    |> onClick (ChangeTree NewBelow node.id)
+                )
+    in
+    nodeBox
+        |> addHitbox model.highlightedBox node.id
+        |> (case model.highlightedBox of
+                Just highlightId ->
+                    if node.id == highlightId then
+                        addButton node.id
 
                     else
                         identity
