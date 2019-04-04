@@ -8,11 +8,11 @@ module Tree.Draw exposing (treeWithConditions)
 
 import Collage exposing (..)
 import Collage.Events exposing (..)
-import Collage.Layout exposing (..)
+import Collage.Layout as Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text as Text exposing (Shape(..), Text, fromString, weight)
 import Color exposing (Color, black, blue, darkGray, red, rgb255, rgba, white)
-import Css exposing (auto, backgroundColor, borderColor, fontFamilies, overflow, pct, resize, textAlign)
+import Css exposing (auto, backgroundColor, borderColor, center, fontFamilies, left, overflow, pct, resize, textAlign)
 import Html.Styled exposing (Html, div, fromUnstyled, input, textarea, toUnstyled)
 import Html.Styled.Attributes exposing (autofocus, cols, css, maxlength, placeholder, rows, style, type_, value, wrap)
 import Html.Styled.Events exposing (onInput)
@@ -145,28 +145,28 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
         ( w, h ) =
             ( max minBoxWidth wc, max minBoxHeight hc )
 
-        placeholderLabel =
+        ( placeholderLabel, textAligning ) =
             case nodeType of
                 StatementNode ->
-                    "Statement"
+                    ( "Statement", textAlign Css.left )
 
                 IfNode ->
-                    "If"
+                    ( "If", textAlign Css.center )
 
                 WhileNode ->
-                    "While"
+                    ( "While", textAlign Css.center )
 
                 ForEachNode ->
-                    "ForEach"
+                    ( "ForEach", textAlign Css.left )
 
                 PreConditionNode ->
-                    "Precondition"
+                    ( "Precondition", textAlign Css.left )
 
                 PostConditionNode ->
-                    "Postcondition"
+                    ( "Postcondition", textAlign Css.left )
 
                 FlowchartNameNode ->
-                    "Algorithm name"
+                    ( "Algorithm name", textAlign Css.center )
 
         htmlTextArea =
             textarea
@@ -179,6 +179,7 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                     , fontFamilies [ "monaco", "monofur", "monospace" ]
                     , backgroundColor (Css.rgba 0 0 0 0)
                     , borderColor (Css.rgba 0 0 0 0)
+                    , textAligning
                     ]
                 , placeholder placeholderLabel
                 , value content
@@ -238,7 +239,7 @@ emptyBox idEmpty =
                     |> onClick (FillEmpty ForEachNode idEmpty)
                 ]
                 |> horizontal
-                |> center
+                |> Layout.center
 
         ( w, h ) =
             ( width options, height options )
@@ -341,7 +342,7 @@ ifBoxShape w h =
             ( uniform (rgb255 241 190 244)
             , solid thin (uniform black)
             )
-        |> center
+        |> Layout.center
 
 
 ifBoxEditable : Id -> String -> Collage Msg
@@ -423,14 +424,14 @@ ifHelper model node text child1 child2 child3 =
                     (labelText "false"
                         |> align bottomLeft
                     )
-                |> align left
+                |> align Layout.left
                 |> addBottomArrow (height decoratedTextBox / 2 + 2 * unit)
                 |> align topRight
                 |> imposeAt right
                     (arrow (height decoratedTextBox / 2 + 2 * unit)
                         |> align top
                     )
-                |> center
+                |> Layout.center
 
         bottomLine =
             midLength
@@ -443,7 +444,7 @@ ifHelper model node text child1 child2 child3 =
                 |> addOverlayMenu model.highlightedBox node
                 |> imposeAt topLeft
                     (labelText "if"
-                        |> align left
+                        |> align Layout.left
                     )
     in
     [ topArrows
@@ -489,7 +490,7 @@ loopBoxShape nodeType w h =
             ( uniform boxColor
             , solid thin (uniform black)
             )
-        |> center
+        |> Layout.center
 
 
 loopBoxEditable : NodeType -> Id -> String -> Collage Msg
@@ -537,14 +538,14 @@ loopHelper nodeType model node text child1 child2 =
                 |> imposeAt right
                     (arrowTriangle
                         |> rotate (pi * 3 / 2)
-                        |> align left
+                        |> align Layout.left
                     )
                 |> addOverlayMenu model.highlightedBox node
                 |> imposeAt topLeft
                     (labelText typeLabel
                         |> align bottom
                     )
-                |> imposeAt left
+                |> imposeAt Layout.left
                     (labelText leftTag
                         |> align bottomRight
                     )
@@ -741,11 +742,11 @@ addHighlightOverlay node nodeBox =
         If _ _ _ _ ->
             nodeBox
                 |> newAboveButton
-                |> imposeAt right
+                |> imposeAt Layout.right
                     (plusBox
                         |> onClick (ChangeTree NewTrue node.id)
                     )
-                |> imposeAt left
+                |> imposeAt Layout.left
                     (plusBox
                         |> onClick (ChangeTree NewFalse node.id)
                     )
@@ -995,13 +996,13 @@ addConditions model tree =
             (flowchartNameBox model.flowchartName
                 |> align right
             )
-        |> connect [ ( "Start", left ), ( "flowchartNameBox", right ) ] (dash verythin (uniform black))
+        |> connect [ ( "Start", Layout.left ), ( "flowchartNameBox", Layout.right ) ] (dash verythin (uniform black))
         |> align right
         |> stackTwo
             (noteBox 4 model.precondition
-                |> align left
+                |> align Layout.left
             )
-        |> connect [ ( "Start", right ), ( "Precondition", left ) ] (dash verythin (uniform black))
+        |> connect [ ( "Start", Layout.right ), ( "Precondition", Layout.left ) ] (dash verythin (uniform black))
         |> shift (correctionCoordinates "End")
         |> shift ( 0, 2.6 * unit )
         |> stackTwo
@@ -1009,7 +1010,7 @@ addConditions model tree =
                 |> align bottomLeft
                 |> shift ( 0, -3 * unit )
             )
-        |> connect [ ( "End", right ), ( "Postcondition", left ) ] (dash verythin (uniform black))
+        |> connect [ ( "End", right ), ( "Postcondition", Layout.left ) ] (dash verythin (uniform black))
 
 
 
@@ -1023,8 +1024,8 @@ addConditions model tree =
 completeTree : Model -> Collage Msg
 completeTree model =
     drawTree model model.tree
-        |> at left gap
-        |> at right gap
+        |> at Layout.left gap
+        |> at Layout.right gap
         |> at top gap
 
 
