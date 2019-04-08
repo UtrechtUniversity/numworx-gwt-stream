@@ -392,9 +392,6 @@ ifHelper model node text child1 child2 child3 =
             ]
                 |> vertical
 
-        widthMidGap =
-            max (unit * 20 - envelope Left rightPiece - envelope Right leftPiece) (unit * 5)
-
         midPiece =
             [ leftPiece
                 |> lineToBottom maxHeight
@@ -410,7 +407,11 @@ ifHelper model node text child1 child2 child3 =
 
         -- The width of the arrows in the figure
         midLength =
-            max (envelope Left rightPiece + envelope Right leftPiece + widthMidGap) (width decoratedTextBox + 2 * unit)
+            max (envelope Left rightPiece + envelope Right leftPiece + unit * 2) (width decoratedTextBox + 6 * unit)
+
+        -- The empty gap in between the left and the right piece
+        widthMidGap =
+            midLength - envelope Left rightPiece - envelope Right leftPiece
 
         topArrows =
             midLength
@@ -572,7 +573,8 @@ loopHelper nodeType model node text child1 child2 =
               )
             )
 
-        superPath =
+        -- We need to place an extra add button at the end of the superpath. However, the hitbox must be drawn using small dimensions, so we use a line of lenght 1
+        superPathOne =
             -- Start below child, then goes counterclockwise
             [ -- bridge the airgap around inner
               ( 0, -downInner )
@@ -581,11 +583,21 @@ loopHelper nodeType model node text child1 child2 =
             , ( rightInner, topInner )
             , ( -leftInner, topInner )
             , ( -leftInner, -(downInner + 2 * unit) )
+            , ( -1 * unit, -(downInner + 2 * unit) )
             , ( 0, -(downInner + 2 * unit) )
             ]
                 |> path
                 |> traced defaultLineStyle
+
+        superPath =
+            [ superPathOne
+
+            -- Funfact: using a shape instead of a line creates a blinking hitbox
+            , line 1
+                |> traced invisible
                 |> addSeparateBelowPlus model node
+            ]
+                |> vertical
     in
     [ superPath
     , inner
@@ -784,7 +796,9 @@ addHitbox highlightedBox id nodeBox =
             ( width nodeBox, height nodeBox )
 
         hitbox =
-            rectangle (w + unit * 2) (h + unit * 2)
+            rectangle
+                (w + unit * 2)
+                (h + unit * 2)
                 |> filled (uniform (rgba 0 0 0 0))
 
         trigger box =
