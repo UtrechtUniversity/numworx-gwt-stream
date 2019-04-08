@@ -391,9 +391,6 @@ ifHelper model node text child1 child2 child3 =
             ]
                 |> vertical
 
-        widthMidGap =
-            max (unit * 20 - envelope Left rightPiece - envelope Right leftPiece) (unit * 5)
-
         midPiece =
             [ leftPiece
                 |> lineToBottom maxHeight
@@ -409,7 +406,11 @@ ifHelper model node text child1 child2 child3 =
 
         -- The width of the arrows in the figure
         midLength =
-            max (envelope Left rightPiece + envelope Right leftPiece + widthMidGap) (width decoratedTextBox + 2 * unit)
+            max (envelope Left rightPiece + envelope Right leftPiece + unit * 2) (width decoratedTextBox + 6 * unit)
+
+        -- The empty gap in between the left and the right piece
+        widthMidGap =
+            midLength - envelope Left rightPiece - envelope Right leftPiece
 
         topArrows =
             midLength
