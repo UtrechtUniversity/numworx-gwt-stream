@@ -432,6 +432,8 @@ ifHelper model node text child1 child2 child3 =
                     (arrow (height decoratedTextBox / 2 + 2 * unit)
                         |> align top
                     )
+                -- Since we imposed the right arrow, the width of the arrowtip is not used in further calculations. We (ugly, I know) fixed it here with a little spacer
+                |> beside Left (spacer 7.5 0)
                 |> Layout.center
 
         bottomLine =
