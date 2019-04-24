@@ -202,8 +202,8 @@ encodeModel model =
         , ( "tree", encodeTree model.tree )
         , ( "currentId", Encode.int model.currentId )
         , ( "highlightedBox", Encode.string "Nothing" )
-        , ( "precondition", Encode.string model.precondition )
-        , ( "postcondition", Encode.string model.postcondition )
+        , ( "precondition", encodeCondition model.precondition )
+        , ( "postcondition", encodeCondition model.postcondition )
         , ( "javaComments", Encode.string model.javaComments )
         ]
 
@@ -314,6 +314,40 @@ encodeBasicTree basicTree =
     Encode.object basicTreeCase
 
 
+encodeCondition : Condition -> Encode.Value
+encodeCondition condition =
+    Encode.object
+        [ ( "nodeType", encodeNodeType condition.nodeType )
+        , ( "content", Encode.string condition.content )
+        , ( "visible", Encode.bool condition.visible )
+        ]
+
+
+encodeNodeType : NodeType -> Encode.Value
+encodeNodeType nodeType =
+    case nodeType of
+        StatementNode ->
+            Encode.string "StatementNode"
+
+        IfNode ->
+            Encode.string "IfNode"
+
+        WhileNode ->
+            Encode.string "WhileNode"
+
+        ForEachNode ->
+            Encode.string "ForEachNode"
+
+        PreConditionNode ->
+            Encode.string "PreConditionNode"
+
+        PostConditionNode ->
+            Encode.string "PostConditionNode"
+
+        FlowchartNameNode ->
+            Encode.string "FlowchartNameNode"
+
+
 
 {--
 
@@ -350,8 +384,8 @@ modelDecoder =
         (Decode.field "tree" (lazy treeDecoder))
         (Decode.field "currentId" Decode.int)
         (Decode.field "highlightedBox" <| Decode.succeed Nothing)
-        (Decode.field "precondition" <| Decode.string)
-        (Decode.field "postcondition" <| Decode.string)
+        (Decode.field "precondition" conditionDecoder)
+        (Decode.field "postcondition" conditionDecoder)
         (Decode.field "javaComments" <| Decode.string)
 
 
@@ -411,3 +445,43 @@ basicTreeDecoder () =
     in
     Decode.field "basicTreeType" Decode.string
         |> andThen basicTreeInfo
+
+
+conditionDecoder : Decoder Condition
+conditionDecoder =
+    Decode.map3 Condition
+        (Decode.field "nodeType" <| nodeTypeDecoder)
+        (Decode.field "content" <| Decode.string)
+        (Decode.field "visible" <| Decode.succeed True)
+
+
+nodeTypeDecoder : Decoder NodeType
+nodeTypeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "StatementNode" ->
+                        Decode.succeed StatementNode
+
+                    "IfNode" ->
+                        Decode.succeed IfNode
+
+                    "WhileNode" ->
+                        Decode.succeed WhileNode
+
+                    "ForEachNode" ->
+                        Decode.succeed ForEachNode
+
+                    "PreConditionNode" ->
+                        Decode.succeed PreConditionNode
+
+                    "PostConditionNode" ->
+                        Decode.succeed PostConditionNode
+
+                    "FlowchartNameNode" ->
+                        Decode.succeed FlowchartNameNode
+
+                    _ ->
+                        Decode.fail "Invalid NodeType"
+            )

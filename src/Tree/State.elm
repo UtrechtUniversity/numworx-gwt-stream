@@ -1,4 +1,4 @@
-module Tree.State exposing (ChangeTree(..), Model, Msg(..), NodeType(..), defaultModel, init, update)
+module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(..), defaultModel, init, update)
 
 {--
 
@@ -29,8 +29,8 @@ type alias Model =
 
     -- There can at most ONE highlighed box at the same time
     , highlightedBox : Maybe Id
-    , precondition : Content
-    , postcondition : Content
+    , precondition : Condition
+    , postcondition : Condition
     , javaComments : String
     }
 
@@ -50,8 +50,8 @@ init =
         }
     , currentId = 10
     , highlightedBox = Nothing
-    , precondition = ""
-    , postcondition = ""
+    , precondition = { nodeType = PreConditionNode, content = "", visible = True }
+    , postcondition = { nodeType = PostConditionNode, content = "", visible = True }
     , javaComments = ""
     }
 
@@ -79,6 +79,8 @@ type Msg
     | DehighlightBox Id
     | KeyDown String Int
     | BlurResult (Result Error ())
+    | ConditionHide NodeType
+    | ConditionShow NodeType
 
 
 type NodeType
@@ -97,6 +99,24 @@ type ChangeTree
     | NewTrue
     | NewFalse
     | Delete
+
+
+type alias Condition =
+    { nodeType : NodeType
+    , content : Content
+    , visible : Bool
+    }
+
+
+setConditionContent : Content -> Condition -> Condition
+setConditionContent newContent condition =
+    -- Elm does not allow struct-in-struct changes, so this function works as some syntactic sugar
+    { condition | content = newContent }
+
+
+setVisibleContent : Bool -> Condition -> Condition
+setVisibleContent bool condition =
+    { condition | visible = bool }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -160,6 +180,38 @@ update msg model =
                     --Debug.log "Blur failed!"
                     ( model, Cmd.none )
 
+        ConditionHide nodeType ->
+            case nodeType of
+                PreConditionNode ->
+                    ( { model | precondition = setVisibleContent False model.precondition }
+                    , Cmd.none
+                    )
+
+                PostConditionNode ->
+                    ( { model | postcondition = setVisibleContent False model.postcondition }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    --Debug.log "ConditionHide on non-condition type!"
+                    ( model, Cmd.none )
+
+        ConditionShow nodeType ->
+            case nodeType of
+                PreConditionNode ->
+                    ( { model | precondition = setVisibleContent True model.precondition }
+                    , Cmd.none
+                    )
+
+                PostConditionNode ->
+                    ( { model | postcondition = setVisibleContent True model.postcondition }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    --Debug.log "ConditionShow on non-condition type!"
+                    ( model, Cmd.none )
+
 
 
 {--
@@ -202,10 +254,10 @@ updateContent newContent idToFind model =
         { model | flowchartName = newContent }
 
     else if idToFind == 4 then
-        { model | precondition = newContent }
+        { model | precondition = setConditionContent newContent model.precondition }
 
     else if idToFind == 5 then
-        { model | postcondition = newContent }
+        { model | postcondition = setConditionContent newContent model.postcondition }
 
     else
         { model | tree = treeRecursion model.tree }
