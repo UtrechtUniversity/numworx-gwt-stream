@@ -191,8 +191,20 @@ debug model =
 toJson : State.Model -> String
 toJson model =
     model
-        |> encodeModel
+        |> encodeEasterEgg
         |> Encode.encode 4
+
+
+
+-- Tiny little easter egg, for the smart kids
+
+
+encodeEasterEgg : State.Model -> Encode.Value
+encodeEasterEgg model =
+    Encode.object
+        [ ( "_Easter_Egg", Encode.string "Well done! You've opened the file in a texteditor! This is a JSON-file and it is used a lot throughout the internet to represent data. The best part is, is that it is quite humanreadable too! You can even edit the values right now and see how they've changed when you reupload the file. Don't forget to brag about your findings and have a nice day!" )
+        , ( "model", encodeModel model )
+        ]
 
 
 encodeModel : State.Model -> Encode.Value
@@ -360,21 +372,34 @@ fromJson : String -> Maybe State.Model
 fromJson json =
     let
         decodedResult =
-            Decode.decodeString modelDecoder json
+            Decode.decodeString easterEggDecoder json
     in
     case decodedResult of
-        Ok model ->
+        Ok wrapper ->
             Just <|
                 Debug.log
                     "Decoded model without problems"
-                    model
+                    wrapper.model
 
-        Err model ->
+        Err wrapper ->
             Debug.log
                 ("Some decoding went wrong: "
-                    ++ Debug.toString model
+                    ++ Debug.toString wrapper
                 )
                 Nothing
+
+
+type alias EasterEgg =
+    { easterEgg : String
+    , model : State.Model
+    }
+
+
+easterEggDecoder : Decoder EasterEgg
+easterEggDecoder =
+    Decode.map2 EasterEgg
+        (Decode.field "_Easter_Egg" Decode.string)
+        (Decode.field "model" modelDecoder)
 
 
 modelDecoder : Decoder State.Model
