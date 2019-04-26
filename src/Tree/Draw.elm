@@ -748,10 +748,14 @@ addHighlightOverlay node nodeBox =
         Start _ ->
             nodeBox
                 |> newBelowButton
+                |> imposeAt Layout.right
+                    (plusBox |> onClick (ConditionShow PreConditionNode))
 
         End ->
             nodeBox
                 |> newAboveButton
+                |> imposeAt Layout.right
+                    (plusBox |> onClick (ConditionShow PostConditionNode))
 
         If _ _ _ _ ->
             nodeBox
@@ -1005,6 +1009,35 @@ addConditions model tree =
 
                 Nothing ->
                     Debug.log ("Coordinate not found " ++ name) ( 0, 0 )
+
+        addPrecondition visible col =
+            if visible then
+                col
+                    |> stackTwo
+                        (noteBox 4 model.precondition.content
+                            |> imposeAt topRight (deleteBox |> onClick (ConditionHide PreConditionNode))
+                            |> align Layout.left
+                        )
+                    |> connect [ ( "Start", Layout.right ), ( "Precondition", Layout.left ) ] (dash verythin (uniform black))
+
+            else
+                col
+
+        addPostcondition visible col =
+            if visible then
+                col
+                    |> shift (correctionCoordinates "End")
+                    |> shift ( 0, 2.6 * unit )
+                    |> stackTwo
+                        (noteBox 5 model.postcondition.content
+                            |> align bottomLeft
+                            |> shift ( 0, -3 * unit )
+                            |> imposeAt topRight (deleteBox |> onClick (ConditionHide PostConditionNode))
+                        )
+                    |> connect [ ( "End", Layout.right ), ( "Postcondition", Layout.left ) ] (dash verythin (uniform black))
+
+            else
+                col
     in
     tree
         |> shift ( 6.5 * unit, -2.6 * unit )
@@ -1014,19 +1047,12 @@ addConditions model tree =
             )
         |> connect [ ( "Start", Layout.left ), ( "flowchartNameBox", Layout.right ) ] (dash verythin (uniform black))
         |> align right
-        |> stackTwo
-            (noteBox 4 model.precondition
-                |> align Layout.left
-            )
-        |> connect [ ( "Start", Layout.right ), ( "Precondition", Layout.left ) ] (dash verythin (uniform black))
-        |> shift (correctionCoordinates "End")
-        |> shift ( 0, 2.6 * unit )
-        |> stackTwo
-            (noteBox 5 model.postcondition
-                |> align bottomLeft
-                |> shift ( 0, -3 * unit )
-            )
-        |> connect [ ( "End", right ), ( "Postcondition", Layout.left ) ] (dash verythin (uniform black))
+        |> addPrecondition model.precondition.visible
+        |> addPostcondition model.postcondition.visible
+        -- The buttons aren't fully rendered because they are imposed. Therefore we create an artificial offset around the flowchart
+        |> at Layout.right gap
+        |> at Layout.right gap
+        |> at Layout.top gap
 
 
 
@@ -1040,9 +1066,8 @@ addConditions model tree =
 completeTree : Model -> Collage Msg
 completeTree model =
     drawTree model model.tree
-        |> at Layout.left gap
-        |> at Layout.right gap
         |> at top gap
+        |> at Layout.right gap
 
 
 treeWithConditions : Model -> List (Html.Styled.Attribute Msg) -> Html Msg

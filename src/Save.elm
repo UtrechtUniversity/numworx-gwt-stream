@@ -191,8 +191,20 @@ debug model =
 toJson : State.Model -> String
 toJson model =
     model
-        |> encodeModel
+        |> encodeEasterEgg
         |> Encode.encode 4
+
+
+
+-- Tiny little easter egg, for the smart kids
+
+
+encodeEasterEgg : State.Model -> Encode.Value
+encodeEasterEgg model =
+    Encode.object
+        [ ( "_Easter_Egg", Encode.string "Well done! You've opened the file in a texteditor! This is a JSON-file and it is used a lot throughout the internet to represent data. The best part is, is that it is quite humanreadable too! You can even edit the values right now and see how they've changed when you reupload the file. Don't forget to brag about your findings and have a nice day!" )
+        , ( "model", encodeModel model )
+        ]
 
 
 encodeModel : State.Model -> Encode.Value
@@ -202,8 +214,8 @@ encodeModel model =
         , ( "tree", encodeTree model.tree )
         , ( "currentId", Encode.int model.currentId )
         , ( "highlightedBox", Encode.string "Nothing" )
-        , ( "precondition", Encode.string model.precondition )
-        , ( "postcondition", Encode.string model.postcondition )
+        , ( "precondition", encodeCondition model.precondition )
+        , ( "postcondition", encodeCondition model.postcondition )
         , ( "javaComments", Encode.string model.javaComments )
         ]
 
@@ -314,6 +326,40 @@ encodeBasicTree basicTree =
     Encode.object basicTreeCase
 
 
+encodeCondition : Condition -> Encode.Value
+encodeCondition condition =
+    Encode.object
+        [ ( "nodeType", encodeNodeType condition.nodeType )
+        , ( "content", Encode.string condition.content )
+        , ( "visible", Encode.bool condition.visible )
+        ]
+
+
+encodeNodeType : NodeType -> Encode.Value
+encodeNodeType nodeType =
+    case nodeType of
+        StatementNode ->
+            Encode.string "StatementNode"
+
+        IfNode ->
+            Encode.string "IfNode"
+
+        WhileNode ->
+            Encode.string "WhileNode"
+
+        ForEachNode ->
+            Encode.string "ForEachNode"
+
+        PreConditionNode ->
+            Encode.string "PreConditionNode"
+
+        PostConditionNode ->
+            Encode.string "PostConditionNode"
+
+        FlowchartNameNode ->
+            Encode.string "FlowchartNameNode"
+
+
 
 {--
 
@@ -326,21 +372,34 @@ fromJson : String -> Maybe State.Model
 fromJson json =
     let
         decodedResult =
-            Decode.decodeString modelDecoder json
+            Decode.decodeString easterEggDecoder json
     in
     case decodedResult of
-        Ok model ->
+        Ok wrapper ->
             Just <|
                 Debug.log
                     "Decoded model without problems"
-                    model
+                    wrapper.model
 
-        Err model ->
+        Err wrapper ->
             Debug.log
                 ("Some decoding went wrong: "
-                    ++ Debug.toString model
+                    ++ Debug.toString wrapper
                 )
                 Nothing
+
+
+type alias EasterEgg =
+    { easterEgg : String
+    , model : State.Model
+    }
+
+
+easterEggDecoder : Decoder EasterEgg
+easterEggDecoder =
+    Decode.map2 EasterEgg
+        (Decode.field "_Easter_Egg" Decode.string)
+        (Decode.field "model" modelDecoder)
 
 
 modelDecoder : Decoder State.Model
@@ -350,8 +409,8 @@ modelDecoder =
         (Decode.field "tree" (lazy treeDecoder))
         (Decode.field "currentId" Decode.int)
         (Decode.field "highlightedBox" <| Decode.succeed Nothing)
-        (Decode.field "precondition" <| Decode.string)
-        (Decode.field "postcondition" <| Decode.string)
+        (Decode.field "precondition" conditionDecoder)
+        (Decode.field "postcondition" conditionDecoder)
         (Decode.field "javaComments" <| Decode.string)
 
 
@@ -411,3 +470,43 @@ basicTreeDecoder () =
     in
     Decode.field "basicTreeType" Decode.string
         |> andThen basicTreeInfo
+
+
+conditionDecoder : Decoder Condition
+conditionDecoder =
+    Decode.map3 Condition
+        (Decode.field "nodeType" <| nodeTypeDecoder)
+        (Decode.field "content" <| Decode.string)
+        (Decode.field "visible" <| Decode.succeed True)
+
+
+nodeTypeDecoder : Decoder NodeType
+nodeTypeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "StatementNode" ->
+                        Decode.succeed StatementNode
+
+                    "IfNode" ->
+                        Decode.succeed IfNode
+
+                    "WhileNode" ->
+                        Decode.succeed WhileNode
+
+                    "ForEachNode" ->
+                        Decode.succeed ForEachNode
+
+                    "PreConditionNode" ->
+                        Decode.succeed PreConditionNode
+
+                    "PostConditionNode" ->
+                        Decode.succeed PostConditionNode
+
+                    "FlowchartNameNode" ->
+                        Decode.succeed FlowchartNameNode
+
+                    _ ->
+                        Decode.fail "Invalid NodeType"
+            )
