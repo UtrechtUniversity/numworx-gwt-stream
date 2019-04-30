@@ -1,4 +1,4 @@
-module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(..), defaultModel, init, update)
+module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(..), defaultModel, init, modelToJava, update)
 
 {--
 
@@ -31,7 +31,6 @@ type alias Model =
     , highlightedBox : Maybe Id
     , precondition : Condition
     , postcondition : Condition
-    , javaComments : String
     }
 
 
@@ -52,7 +51,6 @@ init =
     , highlightedBox = Nothing
     , precondition = { nodeType = PreConditionNode, content = "", visible = True }
     , postcondition = { nodeType = PostConditionNode, content = "", visible = True }
-    , javaComments = ""
     }
 
 
@@ -64,6 +62,26 @@ defaultModel =
         , tree = { id = 0, basicTree = End }
         , currentId = 0
     }
+
+
+modelToJava : Model -> String
+modelToJava model =
+    -- We need to replace '<' so the comments aren't parsed as HTML-tags
+    String.replace "<" "&lt;" <|
+        String.concat <|
+            List.intersperse "\n"
+                [ "/**"
+                , " * <P> Initial:" ++ conditionToJava model.precondition
+                , " * <P> Final:" ++ conditionToJava model.postcondition
+                , " */"
+                , "public void " ++ String.replace " " "_" model.flowchartName ++ "(){"
+                , treeToJava 1 model.tree ++ "}"
+                ]
+
+
+conditionToJava : Condition -> String
+conditionToJava condition =
+    String.replace "\n" "\n *       " condition.content
 
 
 

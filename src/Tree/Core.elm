@@ -1,4 +1,4 @@
-module Tree.Core exposing (BasicTree(..), Content, Id, Tree, continueRecursion, toJavaComment, toStringRec)
+module Tree.Core exposing (BasicTree(..), Content, Id, Tree, continueRecursion, toStringRec, treeToJava)
 
 {--
 
@@ -65,21 +65,21 @@ toStringRec tree =
             String.concat [ "ForEach ", String.fromInt tree.id, " ", content, " ", toStringRec child1, toStringRec child2 ]
 
 
-toJavaComment : Int -> Tree -> String
-toJavaComment indent tree =
+treeToJava : Int -> Tree -> String
+treeToJava indent tree =
     let
         indentation =
             String.repeat indent "  "
     in
     case tree.basicTree of
         Start child ->
-            toJavaComment indent child
+            treeToJava indent child
 
         End ->
             ""
 
         Empty child ->
-            toJavaComment indent child
+            treeToJava indent child
 
         Void ->
             ""
@@ -89,36 +89,47 @@ toJavaComment indent tree =
                 [ indentation
                 , "// "
                 , String.replace "\n" ";\n// " content
-                , "\n\n"
-                , toJavaComment indent child
+                , "\n"
+
+                -- Space to write down the syntacticly correct statement
+                , indentation
+                , "\n"
+                , treeToJava indent child
                 ]
 
         If content child1 child2 child3 ->
             String.concat
                 [ indentation
-                , "// If: " ++ String.replace "\n" "_" content
-                , "\n\n"
-                , toJavaComment (indent + 1) child1
-                , toJavaComment (indent + 1) child2
-                , toJavaComment indent child3
+                , "if("
+                , String.replace "\n" "_" content
+                , ") {\n"
+                , treeToJava (indent + 1) child1
+                , treeToJava (indent + 1) child2
+                , indentation
+                , "}\n"
+                , treeToJava indent child3
                 ]
 
         While content child1 child2 ->
             String.concat
                 [ indentation
-                , "// While: " ++ String.replace "\n" "_" content
-                , "\n\n"
-                , toJavaComment (indent + 1) child1
-                , toJavaComment indent child2
+                , "while(" ++ String.replace "\n" "_" content
+                , "){\n"
+                , treeToJava (indent + 1) child1
+                , indentation
+                , "}\n"
+                , treeToJava indent child2
                 ]
 
         ForEach content child1 child2 ->
             String.concat
                 [ indentation
-                , "// For each: " ++ String.replace "\n" "_" content
-                , "\n\n"
-                , toJavaComment (indent + 1) child1
-                , toJavaComment indent child2
+                , "for(" ++ String.replace "\n" "_" content
+                , "){\n"
+                , treeToJava (indent + 1) child1
+                , indentation
+                , "}\n"
+                , treeToJava indent child2
                 ]
 
 

@@ -8,7 +8,6 @@ module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, debug, 
   Legend: Update, Subscriptions, View, Encoding, Decoding
 
 --}
--- import Tree.Draw as Draw exposing (treeWithConditions)
 
 import Base64 exposing (decode)
 import Color exposing (white)
@@ -41,15 +40,8 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GenerateJavaComments ->
-            let
-                newJavaComments =
-                    --Debug.log "javaComments" <|
-                    toJavaComment 0 model.tree
-            in
-            ( { model
-                | javaComments = newJavaComments
-              }
-            , downloadToast newJavaComments
+            ( model
+            , downloadToast <| modelToJava model
             )
 
         DownloadJson ->
@@ -216,7 +208,6 @@ encodeModel model =
         , ( "highlightedBox", Encode.string "Nothing" )
         , ( "precondition", encodeCondition model.precondition )
         , ( "postcondition", encodeCondition model.postcondition )
-        , ( "javaComments", Encode.string model.javaComments )
         ]
 
 
@@ -404,14 +395,13 @@ easterEggDecoder =
 
 modelDecoder : Decoder State.Model
 modelDecoder =
-    Decode.map7 State.Model
+    Decode.map6 State.Model
         (Decode.field "flowchartName" Decode.string)
         (Decode.field "tree" (lazy treeDecoder))
         (Decode.field "currentId" Decode.int)
         (Decode.field "highlightedBox" <| Decode.succeed Nothing)
         (Decode.field "precondition" conditionDecoder)
         (Decode.field "postcondition" conditionDecoder)
-        (Decode.field "javaComments" <| Decode.string)
 
 
 treeDecoder : () -> Decoder Tree
