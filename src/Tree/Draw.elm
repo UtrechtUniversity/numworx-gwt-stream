@@ -62,13 +62,11 @@ gap =
 
 arrow : Float -> Collage msg
 arrow length =
-    vertical
-        [ line
-            (max length (unit * 2.5))
-            |> traced defaultLineStyle
-            |> rotate (pi / 2)
-        , arrowTriangle
-        ]
+    line
+        (max length (unit * 3))
+        |> traced defaultLineStyle
+        |> rotate (pi / 2)
+        |> imposeAt bottom (arrowTriangle |> align bottom)
 
 
 arrowTriangle : Collage msg
@@ -78,13 +76,26 @@ arrowTriangle =
         |> rotate pi
 
 
-addBottomArrow : Float -> Collage msg -> Collage msg
-addBottomArrow length collage =
+addBottomArrow : Float -> BasicTree -> Collage msg -> Collage msg
+addBottomArrow reqLength child collage =
+    -- Does not draw an arrow tip when void is the child
     -- Give '0' for a default arrow
-    [ collage |> align bottom
-    , arrow length |> align top
-    ]
-        |> stack
+    let
+        length =
+            max reqLength (unit * 3)
+    in
+    case child of
+        Void ->
+            [ collage |> align bottom
+            , line length |> traced defaultLineStyle |> rotate (degrees 90) |> align top
+            ]
+                |> stack
+
+        _ ->
+            [ collage |> align bottom
+            , arrow length |> align top
+            ]
+                |> stack
 
 
 labelText : String -> Collage msg
@@ -157,7 +168,7 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                     ( "While", textAlign Css.center )
 
                 ForEachNode ->
-                    ( "ForEach", textAlign Css.left )
+                    ( "ForEach", textAlign Css.center )
 
                 PreConditionNode ->
                     ( "Precondition", textAlign Css.left )
@@ -413,6 +424,15 @@ ifHelper model node text child1 child2 child3 =
         widthMidGap =
             midLength - envelope Left rightPiece - envelope Right leftPiece
 
+        -- custom addBottomArrow that doesn't stack
+        topArrow child dir length collage =
+            case child of
+                Void ->
+                    collage |> imposeAt dir (line length |> traced defaultLineStyle |> rotate (degrees 90)) |> align top
+
+                _ ->
+                    collage |> imposeAt dir (arrow length) |> align top
+
         topArrows =
             midLength
                 |> line
@@ -426,14 +446,10 @@ ifHelper model node text child1 child2 child3 =
                         |> align bottomLeft
                     )
                 |> align Layout.left
-                |> addBottomArrow (height decoratedTextBox / 2 + 2 * unit)
-                |> align topRight
-                |> imposeAt right
-                    (arrow (height decoratedTextBox / 2 + 2 * unit)
-                        |> align top
-                    )
-                -- Since we imposed the right arrow, the width of the arrowtip is not used in further calculations. We (ugly, I know) fixed it here with a little spacer
-                |> beside Left (spacer 7.5 0)
+                |> beside Up (spacer 0 (height decoratedTextBox / 2 + 2 * unit))
+                |> topArrow child1.basicTree Layout.left (height decoratedTextBox / 2 + 2 * unit)
+                |> Layout.center
+                |> topArrow child2.basicTree Layout.right (height decoratedTextBox / 2 + 2 * unit)
                 |> Layout.center
 
         bottomLine =
@@ -606,7 +622,7 @@ loopHelper nodeType model node text child1 child2 =
     ]
         |> stack
         |> at top decoratedLoopBox
-        |> addBottomArrow 0
+        |> addBottomArrow 0 child2.basicTree
 
 
 
@@ -623,7 +639,7 @@ drawTree model node =
         Start child ->
             [ stubBox "Start"
                 |> addOverlayMenu model.highlightedBox node
-                |> addBottomArrow 0
+                |> addBottomArrow 0 child.basicTree
             , drawTree model child
             ]
                 |> vertical
@@ -636,7 +652,7 @@ drawTree model node =
         Empty child ->
             [ emptyBox node.id
                 |> addOverlayMenu model.highlightedBox node
-                |> addBottomArrow 0
+                |> addBottomArrow 0 child.basicTree
             , drawTree model child
             ]
                 |> vertical
@@ -647,14 +663,14 @@ drawTree model node =
         Statement text child ->
             [ statementBoxEditable node.id text
                 |> addOverlayMenu model.highlightedBox node
-                |> addBottomArrow 0
+                |> addBottomArrow 0 child.basicTree
             , drawTree model child
             ]
                 |> vertical
 
         If text child1 child2 child3 ->
             [ ifHelper model node text child1 child2 child3
-                |> addBottomArrow 0
+                |> addBottomArrow 0 child3.basicTree
             , drawTree model child3
             ]
                 |> vertical
@@ -888,7 +904,8 @@ flowchartNameBox flowchartName =
         htmlInputField =
             input
                 [ autofocus True
-                , placeholder flowchartName
+                , placeholder "Flowchart name"
+                , value flowchartName
                 , maxlength 20
                 , onInput UpdateName
                 , css

@@ -36,7 +36,7 @@ type alias Model =
 
 init : Model
 init =
-    { flowchartName = "Algorithm name"
+    { flowchartName = ""
     , tree =
         { id = 0
         , basicTree =
