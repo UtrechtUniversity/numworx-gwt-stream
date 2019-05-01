@@ -1,4 +1,4 @@
-module Tree.Draw exposing (treeWithConditions, offsetLeft)
+module Tree.Draw exposing (treeWithConditions)
 
 {--
 
@@ -8,13 +8,14 @@ module Tree.Draw exposing (treeWithConditions, offsetLeft)
 
 import Collage exposing (..)
 import Collage.Events exposing (..)
-import Collage.Layout exposing (..)
+import Collage.Layout as Layout exposing (..)
 import Collage.Render exposing (svg)
 import Collage.Text as Text exposing (Shape(..), Text, fromString, weight)
-import Color exposing (Color, rgb, rgba, black, blue, darkGray, red, white)
-import Html exposing (..)
-import Html.Attributes exposing (cols, maxlength, placeholder, rows, style, type_, wrap)
-import Html.Events exposing (onInput)
+import Color exposing (Color, black, blue, darkGray, red, rgb255, rgba, white)
+import Css exposing (auto, backgroundColor, borderColor, center, fontFamilies, left, overflow, pct, resize, textAlign)
+import Html.Styled exposing (Html, div, fromUnstyled, input, textarea, toUnstyled)
+import Html.Styled.Attributes exposing (autofocus, cols, css, maxlength, placeholder, rows, style, type_, value, wrap)
+import Html.Styled.Events exposing (onInput)
 import Json.Decode as Json exposing (map)
 import Tree.Core exposing (..)
 import Tree.State exposing (..)
@@ -29,6 +30,12 @@ imposeAt anchor fore back =
             |> shift (anchor back)
         )
         back
+
+
+imposePrime : Collage msg -> Collage msg -> Collage msg
+imposePrime front back =
+    -- modification to "Collage.Layout.at" for the hitbox. Fronts outline is used, and it is not overshadowed by the hitbox
+    stack [ front, impose back front ]
 
 
 
@@ -49,14 +56,17 @@ gap =
     spacer unit unit
 
 
-arrow : Collage msg
-arrow =
-    vertical
-        [ line (unit * 3)
-            |> traced defaultLineStyle
-            |> rotate (pi / 2)
-        , arrowTriangle
-        ]
+
+-- Give '0' for a default arrow
+
+
+arrow : Float -> Collage msg
+arrow length =
+    line
+        (max length (unit * 3))
+        |> traced defaultLineStyle
+        |> rotate (pi / 2)
+        |> imposeAt bottom (arrowTriangle |> align bottom)
 
 
 arrowTriangle : Collage msg
@@ -66,13 +76,26 @@ arrowTriangle =
         |> rotate pi
 
 
-collageWithTopArrow : Collage msg -> Collage msg
-collageWithTopArrow collage =
-    --
-    [ collage |> align top
-    , arrow |> align bottom
-    ]
-        |> stack
+addBottomArrow : Float -> BasicTree -> Collage msg -> Collage msg
+addBottomArrow reqLength child collage =
+    -- Does not draw an arrow tip when void is the child
+    -- Give '0' for a default arrow
+    let
+        length =
+            max reqLength (unit * 3)
+    in
+    case child of
+        Void ->
+            [ collage |> align bottom
+            , line length |> traced defaultLineStyle |> rotate (degrees 90) |> align top
+            ]
+                |> stack
+
+        _ ->
+            [ collage |> align bottom
+            , arrow length |> align top
+            ]
+                |> stack
 
 
 labelText : String -> Collage msg
@@ -83,47 +106,99 @@ labelText string =
         |> rendered
 
 
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
-    -- Needed for catching an "enter"/"return" to defocus
-    Html.Events.on "keydown" (Json.map tagger Html.Events.keyCode)
-
-
-textBox : Id -> FillEmpty -> String -> Int -> Html Msg
-textBox id newNodeType label maxCharacters =
+multilineEditableTextBox : Id -> NodeType -> String -> Int -> Int -> Int -> ( Html Msg, Int, Int )
+multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidth =
     let
-        placeholderLabel =
-            case newNodeType of
-                AddStatement ->
-                    "Statement"
+        characterWidth c =
+            case c of
+                '\t' ->
+                    4
 
-                AddIf ->
-                    "If"
+                '\n' ->
+                    0
 
-                AddWhile ->
-                    "While"
+                _ ->
+                    1
 
-                AddForEach ->
-                    "ForEach"
+        -- Returns (currentWidth, maxWidth, height)
+        boxDimensions s =
+            case s of
+                -- Note: The minimum width needs to be one bigger than the actual width, because otherwise a scrollbar would appear upon enter
+                [] ->
+                    ( 1, 1, 1 )
+
+                c :: [] ->
+                    if c == '\n' then
+                        ( 1, 1, 2 )
+
+                    else
+                        ( characterWidth c + 1, characterWidth c + 1, 1 )
+
+                c :: cs ->
+                    let
+                        ( cws, mws, hs ) =
+                            boxDimensions cs
+                    in
+                    if c == '\n' then
+                        ( 1, mws, hs + 1 )
+
+                    else if cws + characterWidth c > maxBoxWidth then
+                        ( characterWidth c, mws, hs + 1 )
+
+                    else
+                        ( cws + characterWidth c, max (cws + characterWidth c) mws, hs )
+
+        ( _, wc, hc ) =
+            boxDimensions
+                -- Note: read the string backwards, so newlines indicate the *beginning* of a new line
+                (List.reverse <| String.toList content)
+
+        ( w, h ) =
+            ( max minBoxWidth wc, max minBoxHeight hc )
+
+        ( placeholderLabel, textAligning ) =
+            case nodeType of
+                StatementNode ->
+                    ( "Statement", textAlign Css.left )
+
+                IfNode ->
+                    ( "If", textAlign Css.center )
+
+                WhileNode ->
+                    ( "While", textAlign Css.center )
+
+                ForEachNode ->
+                    ( "ForEach", textAlign Css.center )
+
+                PreConditionNode ->
+                    ( "Precondition", textAlign Css.left )
+
+                PostConditionNode ->
+                    ( "Postcondition", textAlign Css.left )
+
+                FlowchartNameNode ->
+                    ( "Algorithm name", textAlign Css.center )
+
+        htmlTextArea =
+            textarea
+                [ wrap "hard"
+                , cols w
+                , rows h
+                , css
+                    [ overflow auto
+                    , resize Css.none
+                    , fontFamilies [ "monaco", "monofur", "monospace" ]
+                    , backgroundColor (Css.rgba 0 0 0 0)
+                    , borderColor (Css.rgba 0 0 0 0)
+                    , textAligning
+                    ]
+                , placeholder placeholderLabel
+                , value content
+                , onInput <| UpdateContent <| id
+                ]
+                []
     in
-    input
-        [ placeholder placeholderLabel
-        , maxlength <| max maxCharacters <| String.length label
-        , onInput (UpdateContent id)
-        , Html.Attributes.id <| String.fromInt id
-        , onKeyDown <| KeyDown <| String.fromInt id
-        , Html.Attributes.value label
-
-        --, Html.Attributes.autofocus True
-        , style "width" "100%"
-
-            -- , ( "font-family", "'monaco', 'monofur', monospace" )
-            -- , ( "background-color" "rgba(0, 0, 0, 0)" )
-            -- , ( "border-color" "rgba(0, 0, 0, 0)" )
-            -- , ( "text-align" "center" )
-            -- ]
-        ]
-        []
+    ( htmlTextArea, w, h )
 
 
 
@@ -142,7 +217,7 @@ stubBox stubText =
         shape =
             ellipse 50 25
                 |> styled
-                    ( uniform (rgb 208 198 243)
+                    ( uniform (rgb255 208 198 243)
                     , solid thin (uniform black)
                     )
 
@@ -165,17 +240,17 @@ emptyBox idEmpty =
 
         options =
             List.intersperse menuGap
-                [ boxNonEditable "statement" AddStatement
-                    |> onClick (FillEmpty AddStatement idEmpty)
-                , boxNonEditable "if" AddIf
-                    |> onClick (FillEmpty AddIf idEmpty)
-                , boxNonEditable "while" AddWhile
-                    |> onClick (FillEmpty AddWhile idEmpty)
-                , boxNonEditable "forEach" AddForEach
-                    |> onClick (FillEmpty AddForEach idEmpty)
+                [ boxNonEditable "statement" StatementNode
+                    |> onClick (FillEmpty StatementNode idEmpty)
+                , boxNonEditable "if" IfNode
+                    |> onClick (FillEmpty IfNode idEmpty)
+                , boxNonEditable "while" WhileNode
+                    |> onClick (FillEmpty WhileNode idEmpty)
+                , boxNonEditable "forEach" ForEachNode
+                    |> onClick (FillEmpty ForEachNode idEmpty)
                 ]
                 |> horizontal
-                |> center
+                |> Layout.center
 
         ( w, h ) =
             ( width options, height options )
@@ -183,14 +258,14 @@ emptyBox idEmpty =
         shape =
             rectangle (w + unit) (h + unit)
                 |> styled
-                    ( uniform (rgb 255 202 255)
+                    ( uniform (rgb255 255 202 255)
                     , dash thin (uniform darkGray)
                     )
     in
     [ options, shape ] |> stack
 
 
-boxNonEditable : String -> FillEmpty -> Collage Msg
+boxNonEditable : String -> NodeType -> Collage Msg
 boxNonEditable label nodeType =
     let
         text =
@@ -199,19 +274,25 @@ boxNonEditable label nodeType =
         w =
             max (width text) 40
 
+        h =
+            19
+
         shape =
             case nodeType of
-                AddStatement ->
-                    statementBoxShape w
+                StatementNode ->
+                    statementBoxShape w h
 
-                AddIf ->
-                    ifBoxShape w
+                IfNode ->
+                    ifBoxShape w h
 
-                AddWhile ->
-                    whileBoxShape w
+                WhileNode ->
+                    loopBoxShape WhileNode w h
 
-                AddForEach ->
-                    forEachBoxShape w
+                ForEachNode ->
+                    loopBoxShape ForEachNode w h
+
+                _ ->
+                    Debug.log "Tried to create non editable box for Precondition, Postcondition or FlowchartName. Drawing ellipse instead: " filled (uniform red) (ellipse 4 1)
     in
     [ text, shape ] |> stack
 
@@ -221,79 +302,83 @@ voidBox =
     spacer 0 0
 
 
-statementBoxShape : Float -> Collage msg
-statementBoxShape w =
-    rectangle (w + 2 * unit) (4 * unit)
+statementBoxShape : Float -> Float -> Collage msg
+statementBoxShape w h =
+    rectangle (w + 2 * unit) (h + 3 * unit)
         |> styled
-            ( uniform (rgb 244 171 211)
+            ( uniform (rgb255 244 171 211)
             , solid thin (uniform black)
             )
-
-
-
-{--
-onKeyDown : (Int -> msg) -> Attribute msg
-onKeyDown tagger =
-    on "keydown" (Json.map tagger keyCode)
---}
 
 
 statementBoxEditable : Id -> String -> Collage Msg
 statementBoxEditable id label =
     let
+        maxWidth =
+            22
+
+        ( minW, minH ) =
+            ( 10, 1 )
+
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id StatementNode label minW minH maxWidth
+
         ( w, h ) =
-            ( unit * 18, unit * 2 )
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 13 )
 
         htmlBox =
-            html ( w, h ) <|
-                textBox id AddStatement label 22
+            html ( w, h * 1.3 ) <|
+                toUnstyled htmlTextArea
     in
     [ htmlBox
-    , statementBoxShape w
+    , statementBoxShape w h
     ]
         |> stack
 
 
-ifBoxShape : Float -> Collage msg
-ifBoxShape w =
+ifBoxShape : Float -> Float -> Collage msg
+ifBoxShape w h =
     let
         points =
-            [ ( 0, unit * 2 )
+            [ ( 0, h )
             , ( -(unit * 2), 0 )
-            , ( 0, -(unit * 2) )
-            , ( w, -(unit * 2) )
+            , ( 0, -h )
+            , ( w, -h )
             , ( w + (unit * 2), 0 )
-            , ( w, unit * 2 )
+            , ( w, h )
             ]
     in
     polygon points
         |> styled
-            ( uniform (rgb 241 190 244)
+            ( uniform (rgb255 241 190 244)
             , solid thin (uniform black)
             )
-        |> center
+        |> Layout.center
 
 
 ifBoxEditable : Id -> String -> Collage Msg
 ifBoxEditable id label =
-    -- Copyright claim to T. Steenvoorden :sweatsmile:
     let
-        maxCharacters =
-            25
+        maxWidth =
+            23
 
-        characterWidth =
-            min maxCharacters <| max (String.length label) 6
+        ( minW, minH ) =
+            ( 10, 1 )
 
-        w =
-            max (unit * 0.85 * toFloat characterWidth) 70
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id IfNode label minW minH maxWidth
+
+        ( w, h ) =
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
 
         htmlBox =
-            html ( w, 2 * unit ) <|
-                textBox id AddIf label maxCharacters
+            html ( w, h * 2 ) <|
+                toUnstyled htmlTextArea
     in
     stack
         [ htmlBox
-        , ifBoxShape w
+            |> shift ( 0, -7 )
+        , ifBoxShape w h
         ]
 
 
@@ -301,7 +386,9 @@ ifHelper : Model -> Tree -> String -> Tree -> Tree -> Tree -> Collage Msg
 ifHelper model node text child1 child2 child3 =
     let
         ( leftPiece, rightPiece ) =
-            ( drawTree model child1, drawTree model child2 )
+            ( drawTree model child1
+            , drawTree model child2
+            )
 
         maxHeight =
             max (height leftPiece) (height rightPiece) + unit * 5
@@ -316,9 +403,6 @@ ifHelper model node text child1 child2 child3 =
             ]
                 |> vertical
 
-        widthMidGap =
-            max (unit * 20 - envelope Left rightPiece - envelope Right leftPiece) (unit * 5)
-
         midPiece =
             [ leftPiece
                 |> lineToBottom maxHeight
@@ -332,157 +416,155 @@ ifHelper model node text child1 child2 child3 =
                 |> horizontal
                 |> shift ( -midLength / 2, 0 )
 
+        -- The width of the arrows in the figure
         midLength =
-            envelope Left rightPiece
-                + envelope Right leftPiece
-                + widthMidGap
+            max (envelope Left rightPiece + envelope Right leftPiece + unit * 2) (width decoratedTextBox + 6 * unit)
 
-        horizontalLine =
+        -- The empty gap in between the left and the right piece
+        widthMidGap =
+            midLength - envelope Left rightPiece - envelope Right leftPiece
+
+        -- custom addBottomArrow that doesn't stack
+        topArrow child dir length collage =
+            case child of
+                Void ->
+                    collage |> imposeAt dir (line length |> traced defaultLineStyle |> rotate (degrees 90)) |> align top
+
+                _ ->
+                    collage |> imposeAt dir (arrow length) |> align top
+
+        topArrows =
             midLength
                 |> line
                 |> traced defaultLineStyle
-    in
-    [ horizontalLine
-        |> imposeAt topRight
-            (labelText "true"
-                |> align bottomRight
-            )
-        |> imposeAt topLeft
-            (labelText "false"
-                |> align bottomLeft
-            )
-    , midPiece
-    , horizontalLine
-    ]
-        |> vertical
-        |> at top
-            (ifBoxEditable node.id text
+                |> imposeAt topRight
+                    (labelText "true"
+                        |> align bottomRight
+                    )
+                |> imposeAt topLeft
+                    (labelText "false"
+                        |> align bottomLeft
+                    )
+                |> align Layout.left
+                |> beside Up (spacer 0 (height decoratedTextBox / 2 + 2 * unit))
+                |> topArrow child1.basicTree Layout.left (height decoratedTextBox / 2 + 2 * unit)
+                |> Layout.center
+                |> topArrow child2.basicTree Layout.right (height decoratedTextBox / 2 + 2 * unit)
+                |> Layout.center
+
+        bottomLine =
+            midLength
+                |> line
+                |> traced defaultLineStyle
+                |> addSeparateBelowPlus model node
+
+        decoratedTextBox =
+            ifBoxEditable node.id text
                 |> addOverlayMenu model.highlightedBox node
                 |> imposeAt topLeft
                     (labelText "if"
-                        |> align left
+                        |> align Layout.left
                     )
-            )
+    in
+    [ topArrows
+    , midPiece
+    , bottomLine
+    ]
+        |> vertical
+        |> at top decoratedTextBox
 
 
 
 {--
 
-  The While and the ForEach have the same structure, but differ in their main box shape. First the editable boxes will be made, then a generalised "loopHelper" to create the structure around them.
+The While and the ForEach have the same structure, so I generalised them to 'loop'.
 
 --}
 
 
-whileBoxShape : Float -> Collage Msg
-whileBoxShape w =
+loopBoxShape : NodeType -> Float -> Float -> Collage Msg
+loopBoxShape nodeType w h =
     let
+        boxColor =
+            case nodeType of
+                WhileNode ->
+                    rgb255 181 199 245
+
+                ForEachNode ->
+                    rgb255 255 232 255
+
+                _ ->
+                    Debug.log "Tried to instantiate a loopBox of a node type that is not While or ForEach. Proceeding with white: " <| rgb255 0 0 0
+
         points =
-            [ ( 0, unit * 1.5 )
-            , ( 0, -(unit * 1.5) )
-            , ( (w + unit) / 2, -(unit * 2.5) )
-            , ( w + unit, -(unit * 1.5) )
-            , ( w + unit, unit * 1.5 )
+            [ ( 0, h )
+            , ( 0, -h )
+            , ( (w + unit) / 2, -(h * 1.5) )
+            , ( w + unit, -h )
+            , ( w + unit, h )
             ]
     in
     polygon points
         |> styled
-            ( uniform (rgb 181 199 245)
+            ( uniform boxColor
             , solid thin (uniform black)
             )
-        |> center
+        |> Layout.center
 
 
-whileBoxEditable : Id -> String -> Collage Msg
-whileBoxEditable id label =
+loopBoxEditable : NodeType -> Id -> String -> Collage Msg
+loopBoxEditable nodeType id label =
     let
         maxCharacters =
             25
 
-        characterWidth =
-            min maxCharacters <| max (String.length label) 5
+        ( minW, minH ) =
+            ( 10, 1 )
 
-        w =
-            max (unit * 0.85 * toFloat characterWidth) 70
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id nodeType label minW minH maxCharacters
+
+        ( w, h ) =
+            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 5 )
 
         htmlBox =
-            html ( w, 2 * unit ) <|
-                textBox id AddWhile label maxCharacters
+            html ( w, h * 2 ) <|
+                toUnstyled htmlTextArea
     in
     [ htmlBox
-    , whileBoxShape w
+    , loopBoxShape nodeType w h
     ]
         |> stack
 
 
-forEachBoxShape : Float -> Collage Msg
-forEachBoxShape w =
-    let
-        points =
-            [ ( 0, unit * 1.5 )
-            , ( 0, -(unit * 1.5) )
-            , ( (w + unit) / 2, -(unit * 2.5) )
-            , ( w + unit, -(unit * 1.5) )
-            , ( w + unit, unit * 1.5 )
-            ]
-    in
-    polygon points
-        |> styled
-            ( uniform (rgb 255 232 255)
-            , solid thin (uniform black)
-            )
-        |> center
-
-
-forEachBoxEditable : Id -> String -> Collage Msg
-forEachBoxEditable id label =
-    let
-        maxCharacters =
-            25
-
-        characterWidth =
-            min maxCharacters <| max (String.length label) 5
-
-        w =
-            max (unit * 0.85 * toFloat characterWidth) 70
-
-        htmlBox =
-            html ( w, 2 * unit ) <|
-                textBox id AddForEach label maxCharacters
-    in
-    [ htmlBox
-    , forEachBoxShape w
-    ]
-        |> stack
-
-
-loopHelper : FillEmpty -> Model -> Tree -> String -> Tree -> Tree -> Collage Msg
+loopHelper : NodeType -> Model -> Tree -> String -> Tree -> Tree -> Collage Msg
 loopHelper nodeType model node text child1 child2 =
     let
-        ( loopBox, typeLabel, (leftTag, bottomTag )) =
+        ( typeLabel, ( leftTag, bottomTag ) ) =
             case nodeType of
-                AddWhile ->
+                WhileNode ->
                     -- The spaces in the tags are an ugly fix, I'm sorry
-                    ( whileBoxEditable, "while", ("false   ", "   true") )
+                    ( "while", ( "false   ", "   true" ) )
 
-                AddForEach ->
-                    ( forEachBoxEditable, "for each", ("done   ", "  repeat") )
+                ForEachNode ->
+                    ( "for each", ( "done   ", "  repeat" ) )
 
                 a ->
-                    Debug.log ("Tried to create loopHelper with non-loop type: " ++ Debug.toString a ++ " continueing without change.") (whileBoxEditable, "report", ("please", "this"))
+                    Debug.log ("Tried to create loopHelper with non-loop type: " ++ Debug.toString a ++ " continueing without change.") ( "report", ( "this", "please" ) )
 
         decoratedLoopBox =
-            loopBox node.id text
+            loopBoxEditable nodeType node.id text
                 |> imposeAt right
                     (arrowTriangle
                         |> rotate (pi * 3 / 2)
-                        |> align left
+                        |> align Layout.left
                     )
                 |> addOverlayMenu model.highlightedBox node
                 |> imposeAt topLeft
                     (labelText typeLabel
                         |> align bottom
                     )
-                |> imposeAt left
+                |> imposeAt Layout.left
                     (labelText leftTag
                         |> align bottomRight
                     )
@@ -492,47 +574,55 @@ loopHelper nodeType model node text child1 child2 =
                     )
 
         widthInner =
-            max (20 * unit) (width <| drawTree model child1)
+            max (width decoratedLoopBox + 4 * unit) (width <| drawTree model child1)
 
         inner =
-            [ [ drawTree model child1
-              , line unit
-                    |> traced defaultLineStyle
-                    |> rotate (pi / 2)
-              ]
-                |> vertical
-            , spacer widthInner 0
+            [ arrow (height decoratedLoopBox / 2)
+            , drawTree model child1
             ]
-                |> stack
+                |> vertical
 
-        ( topInner, leftInner, (downInner, rightInner )) =
+        ( topInner, leftInner, ( downInner, rightInner ) ) =
             -- Outerlines
             ( envelope Up inner + unit
-            , envelope Left inner + unit
-            , (envelope Down inner + unit
-            , envelope Right inner + unit
-            ))
+            , max (envelope Left inner + unit) (width decoratedLoopBox / 2 + 2 * unit)
+            , ( envelope Down inner
+              , max (envelope Right inner + unit) (width decoratedLoopBox / 2 + 2 * unit)
+              )
+            )
 
-        superPath =
+        -- We need to place an extra add button at the end of the superpath. However, the hitbox must be drawn using small dimensions, so we use a line of lenght 1
+        superPathOne =
             -- Start below child, then goes counterclockwise
             [ -- bridge the airgap around inner
-              ( 0, -downInner + unit )
-            , ( 0, -downInner )
+              ( 0, -downInner )
             , ( rightInner, -downInner )
             , ( rightInner, topInner )
             , ( rightInner, topInner )
             , ( -leftInner, topInner )
             , ( -leftInner, -(downInner + 2 * unit) )
+            , ( -1 * unit, -(downInner + 2 * unit) )
             , ( 0, -(downInner + 2 * unit) )
             ]
                 |> path
                 |> traced defaultLineStyle
+
+        superPath =
+            [ superPathOne
+
+            -- Funfact: using a shape instead of a line creates a blinking hitbox
+            , line 1
+                |> traced invisible
+                |> addSeparateBelowPlus model node
+            ]
+                |> vertical
     in
     [ superPath
     , inner
     ]
         |> stack
         |> at top decoratedLoopBox
+        |> addBottomArrow 0 child2.basicTree
 
 
 
@@ -549,23 +639,20 @@ drawTree model node =
         Start child ->
             [ stubBox "Start"
                 |> addOverlayMenu model.highlightedBox node
+                |> addBottomArrow 0 child.basicTree
             , drawTree model child
             ]
                 |> vertical
 
         End ->
-            [ collageWithTopArrow
-                (stubBox "End"
-                    |> addOverlayMenu model.highlightedBox node
-                )
-            ]
-                |> vertical
+            -- TODO simplify, remove vertical
+            stubBox "End"
+                |> addOverlayMenu model.highlightedBox node
 
         Empty child ->
-            [ collageWithTopArrow
-                (emptyBox node.id
-                    |> addOverlayMenu model.highlightedBox node
-                )
+            [ emptyBox node.id
+                |> addOverlayMenu model.highlightedBox node
+                |> addBottomArrow 0 child.basicTree
             , drawTree model child
             ]
                 |> vertical
@@ -574,31 +661,28 @@ drawTree model node =
             voidBox
 
         Statement text child ->
-            [ collageWithTopArrow
-                (statementBoxEditable node.id text
-                    |> addOverlayMenu model.highlightedBox node
-                )
+            [ statementBoxEditable node.id text
+                |> addOverlayMenu model.highlightedBox node
+                |> addBottomArrow 0 child.basicTree
             , drawTree model child
             ]
                 |> vertical
 
         If text child1 child2 child3 ->
-            [ collageWithTopArrow
-                (ifHelper model node text child1 child2 child3)
+            [ ifHelper model node text child1 child2 child3
+                |> addBottomArrow 0 child3.basicTree
             , drawTree model child3
             ]
                 |> vertical
 
         While text child1 child2 ->
-            [ collageWithTopArrow
-                (loopHelper AddWhile model node text child1 child2)
+            [ loopHelper WhileNode model node text child1 child2
             , drawTree model child2
             ]
                 |> vertical
 
         ForEach text child1 child2 ->
-            [ collageWithTopArrow
-                (loopHelper AddForEach model node text child1 child2)
+            [ loopHelper ForEachNode model node text child1 child2
             , drawTree model child2
             ]
                 |> vertical
@@ -680,19 +764,23 @@ addHighlightOverlay node nodeBox =
         Start _ ->
             nodeBox
                 |> newBelowButton
+                |> imposeAt Layout.right
+                    (plusBox |> onClick (ConditionShow PreConditionNode))
 
         End ->
             nodeBox
                 |> newAboveButton
+                |> imposeAt Layout.right
+                    (plusBox |> onClick (ConditionShow PostConditionNode))
 
         If _ _ _ _ ->
             nodeBox
                 |> newAboveButton
-                |> imposeAt right
+                |> imposeAt Layout.right
                     (plusBox
                         |> onClick (ChangeTree NewTrue node.id)
                     )
-                |> imposeAt left
+                |> imposeAt Layout.left
                     (plusBox
                         |> onClick (ChangeTree NewFalse node.id)
                     )
@@ -730,33 +818,124 @@ addHitbox highlightedBox id nodeBox =
             ( width nodeBox, height nodeBox )
 
         hitbox =
-            rectangle (w + unit * 2) (h + unit * 2)
-                |> filled (uniform (rgba 250 20 20 0.1))
+            rectangle
+                (w + unit * 2)
+                (h + unit * 2)
+                |> filled (uniform (rgba 0 0 0 0))
 
         trigger box =
             box
-                |> (if id == unpackId highlightedBox then
-                        -- In this case, a highlightingoverlay blocks this hitbox, causing the onMouseEnter to trigger multiple times
-                        identity
-                    else
-                        -- 'always' is used to throw away the entrance point
-                        onMouseEnter (always (HighlightBox id))
+                |> (case highlightedBox of
+                        Just highlightId ->
+                            if id == highlightId then
+                                -- In this case, a highlightingoverlay blocks this hitbox, causing the onMouseEnter to trigger multiple times
+                                identity
+
+                            else
+                                -- 'always' is used to throw away the entrance point
+                                onMouseEnter (always (HighlightBox id))
+
+                        Nothing ->
+                            onMouseEnter (always (HighlightBox id))
                    )
                 |> onMouseLeave
                     (always (DehighlightBox id))
     in
-    impose nodeBox hitbox |> trigger
+    imposePrime (trigger nodeBox) (trigger hitbox)
 
 
 addOverlayMenu : Maybe Id -> Tree -> Collage Msg -> Collage Msg
 addOverlayMenu highlightedBox node nodeBox =
     nodeBox
         |> addHitbox highlightedBox node.id
-        |> (if node.id == unpackId highlightedBox then
-                addHighlightOverlay node
-            else
-                identity
+        |> (case highlightedBox of
+                Just highlightId ->
+                    if node.id == highlightId then
+                        addHighlightOverlay node
+
+                    else
+                        identity
+
+                Nothing ->
+                    identity
            )
+
+
+addSeparateBelowPlus : Model -> Tree -> Collage Msg -> Collage Msg
+addSeparateBelowPlus model node nodeBox =
+    -- Similar to addOverlayMenu
+    -- made for the if, while and foreach
+    -- should one of these become a child of a while or foreach,
+    --  then now there is a way to add a below child for it
+    let
+        addButton id =
+            imposeAt bottom
+                (plusBox
+                    |> onClick (ChangeTree NewBelow node.id)
+                )
+    in
+    nodeBox
+        |> addHitbox model.highlightedBox node.id
+        |> (case model.highlightedBox of
+                Just highlightId ->
+                    if node.id == highlightId then
+                        addButton node.id
+
+                    else
+                        identity
+
+                Nothing ->
+                    identity
+           )
+
+
+
+{--
+
+ Draw the flowchartName field
+
+--}
+
+
+flowchartNameBox : String -> Collage Msg
+flowchartNameBox flowchartName =
+    let
+        -- TODO rewrtie to allow multiple lines
+        htmlInputField =
+            input
+                [ autofocus True
+                , placeholder "Flowchart name"
+                , value flowchartName
+                , maxlength 20
+                , onInput UpdateName
+                , css
+                    [ Css.width (pct 100)
+                    , fontFamilies [ "monaco", "monofur", "monospace" ]
+                    , backgroundColor (Css.rgba 0 0 0 0)
+                    , borderColor (Css.rgba 0 0 0 0)
+                    , textAlign Css.center
+                    ]
+                ]
+                []
+
+        ( w, h ) =
+            ( unit * 16, unit * 2 )
+
+        htmlBox =
+            html ( w, h ) <| toUnstyled htmlInputField
+
+        flowchartNameBoxShape =
+            rectangle (w + 2 * unit) (4 * unit)
+                |> styled
+                    ( uniform (rgb255 193 212 255)
+                    , solid thin (uniform black)
+                    )
+    in
+    [ htmlBox
+    , flowchartNameBoxShape
+    ]
+        |> stack
+        |> name "flowchartNameBox"
 
 
 
@@ -767,30 +946,6 @@ addOverlayMenu highlightedBox node nodeBox =
 --}
 
 
-multilineEditableTextBox : ConditionType -> String -> Html Msg
-multilineEditableTextBox conditionType label =
-    let
-        styling =
-            style "overflow" "auto"
-                -- [ ( "overflow", "auto" )
-                -- , ( "resize", "none" )
-                -- , ( "font-family", "'monaco', 'monofur', monospace" )
-                -- , ( "background-color", "rgba(0, 0, 0, 0)" )
-                -- , ( "border-color", "rgba(0, 0, 0, 0)" )
-                -- ]
-    in
-    textarea
-        [ wrap "hard"
-        , cols 30
-        , rows 4
-        , styling
-        , placeholder <| Debug.toString conditionType
-        , Html.Attributes.value label
-        , onInput <| UpdateCondition conditionType
-        ]
-        []
-
-
 stackTwo : Collage msg -> Collage msg -> Collage msg
 stackTwo front back =
     -- Inline stacking in combination with |>
@@ -798,15 +953,37 @@ stackTwo front back =
     [ front, back ] |> stack
 
 
-noteBox : ConditionType -> String -> Collage Msg
-noteBox conditionType label =
+noteBox : Id -> String -> Collage Msg
+noteBox id label =
     let
+        ( minW, minH ) =
+            ( 30, 4 )
+
+        ( htmlTextArea, wta, hta ) =
+            multilineEditableTextBox id nodeType label minW minH minW
+
         ( w, h ) =
-            ( unit * 14, unit * 5 )
+            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 15 )
+
+        nodeType =
+            if id == 4 then
+                PreConditionNode
+
+            else if id == 5 then
+                PostConditionNode
+
+            else
+                Debug.log "Tried to create non pre- or postcondition notebox. Using postcondition instead " PostConditionNode
+
+        conditionType =
+            if id == 4 then
+                "Precondition"
+
+            else
+                "Postcondition"
 
         title =
             conditionType
-                |> Debug.toString
                 |> fromString
                 |> weight Text.SemiBold
                 |> rendered
@@ -821,7 +998,7 @@ noteBox conditionType label =
             ]
                 |> polygon
                 |> styled
-                    ( uniform (rgb 220 237 248)
+                    ( uniform (rgb255 220 237 248)
                     , solid thin (uniform black)
                     )
                 |> align topRight
@@ -831,15 +1008,12 @@ noteBox conditionType label =
                 |> shift ( -unit, unit * 2.5 )
                 |> impose text
 
-        htmlText =
-            multilineEditableTextBox conditionType label
-
         text =
-            html ( w * 2 - unit * 2, h * 2 - unit * 3.5 ) htmlText
+            html ( w * 2, h * 2 ) (toUnstyled htmlTextArea)
                 |> align topLeft
     in
     shape
-        |> name (Debug.toString conditionType)
+        |> name conditionType
 
 
 addConditions : Model -> Collage Msg -> Collage Msg
@@ -852,22 +1026,50 @@ addConditions model tree =
 
                 Nothing ->
                     Debug.log ("Coordinate not found " ++ name) ( 0, 0 )
+
+        addPrecondition visible col =
+            if visible then
+                col
+                    |> stackTwo
+                        (noteBox 4 model.precondition.content
+                            |> imposeAt topRight (deleteBox |> onClick (ConditionHide PreConditionNode))
+                            |> align Layout.left
+                        )
+                    |> connect [ ( "Start", Layout.right ), ( "Precondition", Layout.left ) ] (dash verythin (uniform black))
+
+            else
+                col
+
+        addPostcondition visible col =
+            if visible then
+                col
+                    |> shift (correctionCoordinates "End")
+                    |> shift ( 0, 2.6 * unit )
+                    |> stackTwo
+                        (noteBox 5 model.postcondition.content
+                            |> align bottomLeft
+                            |> shift ( 0, -3 * unit )
+                            |> imposeAt topRight (deleteBox |> onClick (ConditionHide PostConditionNode))
+                        )
+                    |> connect [ ( "End", Layout.right ), ( "Postcondition", Layout.left ) ] (dash verythin (uniform black))
+
+            else
+                col
     in
     tree
-        |> shift ( -19 * unit, 0 )
-        |> shift (correctionCoordinates "Start")
+        |> shift ( 6.5 * unit, -2.6 * unit )
         |> stackTwo
-            (noteBox Precondition model.precondition
-                |> align left
+            (flowchartNameBox model.flowchartName
+                |> align right
             )
-        |> connect [ ( "Start", right ), ( "Precondition", left ) ] (dash verythin (uniform black))
-        |> shift (correctionCoordinates "End")
-        |> stackTwo
-            (noteBox Postcondition model.postcondition
-                |> align bottomLeft
-                |> shift ( 0, -3 * unit )
-            )
-        |> connect [ ( "End", right ), ( "Postcondition", left ) ] (dash verythin (uniform black))
+        |> connect [ ( "Start", Layout.left ), ( "flowchartNameBox", Layout.right ) ] (dash verythin (uniform black))
+        |> align right
+        |> addPrecondition model.precondition.visible
+        |> addPostcondition model.postcondition.visible
+        -- The buttons aren't fully rendered because they are imposed. Therefore we create an artificial offset around the flowchart
+        |> at Layout.right gap
+        |> at Layout.right gap
+        |> at Layout.top gap
 
 
 
@@ -880,25 +1082,18 @@ addConditions model tree =
 
 completeTree : Model -> Collage Msg
 completeTree model =
-         drawTree model model.tree
-            |> at left gap
-            |> at right gap
+    drawTree model model.tree
+        |> at top gap
+        |> at Layout.right gap
 
 
-treeWithConditions : Model -> List (Html.Attribute Msg) -> Html Msg
+treeWithConditions : Model -> List (Html.Styled.Attribute Msg) -> Html Msg
 treeWithConditions model msgAttributeHtmlList =
     div msgAttributeHtmlList
-      [ completeTree model
-                  |> addConditions model
-                  |> svg
+        [ completeTree model
+            |> addConditions model
+            |> svg
+            |> fromUnstyled
 
-                    --, text ("Debug info, model.tree: " ++ toStringRec model.tree)
-                  ]
-
-offsetLeft : Model -> Float
-offsetLeft model =
-    let
-        envL =
-            envelope Left (completeTree model)
-    in
-    max (10 + 253 + 61 - envL) 0
+        --, text ("Debug info, model.tree: " ++ toStringRec model.tree)
+        ]

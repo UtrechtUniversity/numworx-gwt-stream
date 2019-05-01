@@ -4,7 +4,7 @@
 # Doing things in serial/parallel
 # https://unix.stackexchange.com/questions/63648/how-to-send-many-commands-to-shell-and-wait-for-the-command-behind-ends
 
-# compile my script
+# compile with debugger
 elm make src/Main.elm --output=main.js --debug &&
 # open it
 path=$(realpath Stream.html)

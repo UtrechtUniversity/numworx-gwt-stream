@@ -1,4 +1,4 @@
-module Save exposing (..)
+module Save exposing (Msg(..), basicTreeDecoder, copyJavaCommentsButton, debug, downloadButton, encodeBasicTree, encodeModel, encodeTree, fromJson, modelDecoder, toJson, treeDecoder, update, uploadButton, view)
 
 {--
 
@@ -10,136 +10,130 @@ module Save exposing (..)
 --}
 
 import Base64 exposing (decode)
+import Color exposing (white)
+import Css exposing (..)
 import Debug exposing (log)
-import Html exposing (..)
-import Html.Attributes exposing (class, href, id, placeholder, style, type_)
-import Html.Events exposing (on, onClick, onInput)
--- import Http exposing (encodeUri)
-import Json.Decode as Decode exposing(..)
-import Json.Encode as Encode exposing(..)
-import Ports exposing (JsonPortData, downloadToast, fileContentRead, fileSelected)
+import File exposing (File)
+import File.Download as Download exposing (string)
+import File.Select as Select
+import Html.Styled exposing (Html, a, br, button, div, input, li, text, ul)
+import Html.Styled.Attributes exposing (autofocus, class, css, href, id, multiple, placeholder, style, type_)
+import Html.Styled.Events exposing (on, onClick, onInput)
+import Json.Decode as Decode exposing (..)
+import Json.Encode as Encode exposing (..)
+import Ports exposing (downloadToast)
+import Task exposing (perform)
 import Tree.Core as Tree exposing (..)
-import Tree.Draw as Draw exposing (treeWithConditions)
+import Tree.Draw exposing (treeWithConditions)
 import Tree.State as State exposing (..)
 
 
 type Msg
-    = UpdateName String
-    | JsonSelected String
-    | JsonRead JsonPortData
-    | GenerateJavaComments
+    = GenerateJavaComments
+    | DownloadJson
+    | UploadRequested
+    | UploadLoaded File
+    | UploadRead String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        UpdateName newName ->
-            ( { model | flowchartName = newName }
-            , Cmd.none
-            )
-
-        JsonSelected inputBoxId ->
+        GenerateJavaComments ->
             ( model
-            , fileSelected inputBoxId
+            , downloadToast <| modelToJava model
             )
 
-        JsonRead data ->
+        DownloadJson ->
+            ( model, Download.string (model.flowchartName ++ ".flow") "application/flow" (toJson model) )
+
+        UploadRequested ->
+            ( model, Select.file [ "application/flow" ] UploadLoaded )
+
+        UploadLoaded file ->
+            ( model, Task.perform UploadRead (File.toString file) )
+
+        UploadRead string ->
             let
-                decoded64String =
-                    -- This is unstable code
-                    case Base64.decode <| String.dropLeft 13 data.contents of
-                        Ok jsonModel ->
-                            jsonModel
-
-                        Err error ->
-                            Debug.log "Couldn't base64 decode upload" error
-
                 updateModel oldModel =
-                    case fromJson decoded64String of
+                    case fromJson string of
                         Just newModel ->
                             newModel
 
                         Nothing ->
                             oldModel
             in
-            ( updateModel model
-            , Cmd.none
-            )
-
-        GenerateJavaComments ->
-            let
-                newJavaComments =
-                    --Debug.log "javaComments" <|
-                    toJavaComment 0 model.tree
-            in
-            ( { model
-                | javaComments = newJavaComments
-              }
-            , downloadToast newJavaComments
-            )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    fileContentRead JsonRead
+            ( updateModel model, Cmd.none )
 
 
 
 {--
 
-  View: naming textfield, download- and uploadButtons
+  View: fixed footer menu containing
+   naming textfield, download- and uploadButtons
 
 --}
 
 
-view : Model -> List (Html.Attribute Msg) -> Html Msg
-view model layout =
-    div layout
-        [ namingField model.flowchartName
-        , br [] []
-        , downloadButton model
-        , uploadButton
-        , copyJavaCommentsButton
+unorderdListStyle : List (Html.Styled.Attribute msg)
+unorderdListStyle =
+    -- listStyleType: none;
+    [ css
+        [ margin (px 0)
+        , padding (px 0)
+        , overflow hidden
+        , zIndex (Css.int 10)
+        , backgroundColor (rgb 240 240 240)
+        , position fixed
+        , left (px 0)
+        , bottom (px 0)
+        , height (px 50)
+        , width (pct 100)
         ]
+    ]
 
 
-namingField : String -> Html Msg
-namingField flowchartName =
-    input
-        [ Html.Attributes.autofocus True
-        , placeholder flowchartName
-        , onInput UpdateName
+listItemStyle : List (Html.Styled.Attribute msg)
+listItemStyle =
+    [ css
+        [ Css.float left
+        , display block
+
+        -- , color white
+        , textAlign center
+        , padding2 (px 14) (px 16)
+
+        -- text-decoration: none;
         ]
-        []
+    ]
+
+
+view : Model -> Html Msg
+view model =
+    ul unorderdListStyle
+        [ li listItemStyle [ copyJavaCommentsButton ]
+        , li listItemStyle [ downloadButton model ]
+        , li listItemStyle [ uploadButton ]
+        ]
 
 
 downloadButton : Model -> Html Msg
 downloadButton model =
-    a
-        [ type_ "button"
-        -- TODO removed encodeUri, does this still work?
-        , href <| "data:text/plain;charset=utf-8," ++ (toJson model)
--- Trigger modal upon downloading
-        -- , downloadAs (model.flowchartName ++ ".flow")
-        ]
-        [ button [] [ text "Download" ] ]
+    button
+        [ onClick DownloadJson ]
+        [ text "Download" ]
 
 
 uploadButton : Html Msg
 uploadButton =
-    let
-        ownId =
-            "jsonUploadButton"
-    in
-    div [ class "jsonWrapper" ]
-        [ input
-            [ type_ "file"
-            , id ownId
-            , on "change"
-                (succeed <| JsonSelected ownId)
-            ]
-            []
-        ]
+    button
+        [ onClick UploadRequested ]
+        [ text "Upload" ]
+
+
+fileReader : File -> Cmd Msg
+fileReader file =
+    Task.perform UploadRead (File.toString file)
 
 
 copyJavaCommentsButton : Html Msg
@@ -147,6 +141,35 @@ copyJavaCommentsButton =
     button
         [ onClick GenerateJavaComments ]
         [ text "Convert to Java comments" ]
+
+
+
+{--
+
+  Debugging
+
+--}
+
+
+debug : Model -> List (Html.Styled.Attribute State.Msg) -> Html State.Msg
+debug model =
+    -- Show decodedModel in a tree and visually check for diffs
+    let
+        decodingModel () =
+            model
+                |> toJson
+                |> Debug.log "Debugmode: json"
+                |> fromJson
+
+        decodedModel () =
+            case decodingModel () of
+                Just newModel ->
+                    newModel
+
+                Nothing ->
+                    Debug.log "Could not unpack decoded model, so using default model instead: " defaultModel
+    in
+    treeWithConditions (decodedModel ())
 
 
 
@@ -160,8 +183,20 @@ copyJavaCommentsButton =
 toJson : State.Model -> String
 toJson model =
     model
-        |> encodeModel
+        |> encodeEasterEgg
         |> Encode.encode 4
+
+
+
+-- Tiny little easter egg, for the smart kids
+
+
+encodeEasterEgg : State.Model -> Encode.Value
+encodeEasterEgg model =
+    Encode.object
+        [ ( "_Easter_Egg", Encode.string "Well done! You've opened the file in a texteditor! This is a JSON-file and it is used a lot throughout the internet to represent data. The best part is, is that it is quite humanreadable too! You can even edit the values right now and see how they've changed when you reupload the file. Don't forget to brag about your findings and have a nice day!" )
+        , ( "model", encodeModel model )
+        ]
 
 
 encodeModel : State.Model -> Encode.Value
@@ -171,9 +206,8 @@ encodeModel model =
         , ( "tree", encodeTree model.tree )
         , ( "currentId", Encode.int model.currentId )
         , ( "highlightedBox", Encode.string "Nothing" )
-        , ( "precondition", Encode.string model.precondition )
-        , ( "postcondition", Encode.string model.postcondition )
-        , ( "javaComments", Encode.string model.javaComments )
+        , ( "precondition", encodeCondition model.precondition )
+        , ( "postcondition", encodeCondition model.postcondition )
         ]
 
 
@@ -283,6 +317,40 @@ encodeBasicTree basicTree =
     Encode.object basicTreeCase
 
 
+encodeCondition : Condition -> Encode.Value
+encodeCondition condition =
+    Encode.object
+        [ ( "nodeType", encodeNodeType condition.nodeType )
+        , ( "content", Encode.string condition.content )
+        , ( "visible", Encode.bool condition.visible )
+        ]
+
+
+encodeNodeType : NodeType -> Encode.Value
+encodeNodeType nodeType =
+    case nodeType of
+        StatementNode ->
+            Encode.string "StatementNode"
+
+        IfNode ->
+            Encode.string "IfNode"
+
+        WhileNode ->
+            Encode.string "WhileNode"
+
+        ForEachNode ->
+            Encode.string "ForEachNode"
+
+        PreConditionNode ->
+            Encode.string "PreConditionNode"
+
+        PostConditionNode ->
+            Encode.string "PostConditionNode"
+
+        FlowchartNameNode ->
+            Encode.string "FlowchartNameNode"
+
+
 
 {--
 
@@ -295,33 +363,45 @@ fromJson : String -> Maybe State.Model
 fromJson json =
     let
         decodedResult =
-            Decode.decodeString modelDecoder json
+            Decode.decodeString easterEggDecoder json
     in
     case decodedResult of
-        Ok model ->
+        Ok wrapper ->
             Just <|
                 Debug.log
                     "Decoded model without problems"
-                    model
+                    wrapper.model
 
-        Err model ->
+        Err wrapper ->
             Debug.log
                 ("Some decoding went wrong: "
-                    ++ Debug.toString model
+                    ++ Debug.toString wrapper
                 )
                 Nothing
 
 
+type alias EasterEgg =
+    { easterEgg : String
+    , model : State.Model
+    }
+
+
+easterEggDecoder : Decoder EasterEgg
+easterEggDecoder =
+    Decode.map2 EasterEgg
+        (Decode.field "_Easter_Egg" Decode.string)
+        (Decode.field "model" modelDecoder)
+
+
 modelDecoder : Decoder State.Model
 modelDecoder =
-    Decode.map7 State.Model
+    Decode.map6 State.Model
         (Decode.field "flowchartName" Decode.string)
         (Decode.field "tree" (lazy treeDecoder))
         (Decode.field "currentId" Decode.int)
         (Decode.field "highlightedBox" <| Decode.succeed Nothing)
-        (Decode.field "precondition" <| Decode.string)
-        (Decode.field "postcondition" <| Decode.string)
-        (Decode.field "javaComments" <| Decode.string)
+        (Decode.field "precondition" conditionDecoder)
+        (Decode.field "postcondition" conditionDecoder)
 
 
 treeDecoder : () -> Decoder Tree
@@ -380,3 +460,43 @@ basicTreeDecoder () =
     in
     Decode.field "basicTreeType" Decode.string
         |> andThen basicTreeInfo
+
+
+conditionDecoder : Decoder Condition
+conditionDecoder =
+    Decode.map3 Condition
+        (Decode.field "nodeType" <| nodeTypeDecoder)
+        (Decode.field "content" <| Decode.string)
+        (Decode.field "visible" <| Decode.succeed True)
+
+
+nodeTypeDecoder : Decoder NodeType
+nodeTypeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "StatementNode" ->
+                        Decode.succeed StatementNode
+
+                    "IfNode" ->
+                        Decode.succeed IfNode
+
+                    "WhileNode" ->
+                        Decode.succeed WhileNode
+
+                    "ForEachNode" ->
+                        Decode.succeed ForEachNode
+
+                    "PreConditionNode" ->
+                        Decode.succeed PreConditionNode
+
+                    "PostConditionNode" ->
+                        Decode.succeed PostConditionNode
+
+                    "FlowchartNameNode" ->
+                        Decode.succeed FlowchartNameNode
+
+                    _ ->
+                        Decode.fail "Invalid NodeType"
+            )

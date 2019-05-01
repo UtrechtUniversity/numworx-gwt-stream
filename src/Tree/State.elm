@@ -1,14 +1,23 @@
-module Tree.State exposing (ChangeTree(..), ConditionType(..), FillEmpty(..), Model, Msg(..), defaultModel, init, unpackId, update)
+module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(..), defaultModel, init, modelToJava, update)
 
 {--
 
   Module containing state of tree as described in Tree.Core.elm and auxiliary variables
   Describes, inits and updates state
 
+  Note on (somewhat ugly) hardcoded id-numbers:
+   0: Start node
+   1: First Empty node
+   2: End node
+   3: Algorithm name box
+   4: Precondition
+   5: Postcondition
+   10+: All generated nodes (mind, there are large gaps between these numbers)
+
 --}
 
+import Browser.Dom exposing (Error, blur)
 import Debug exposing (log)
-import Browser.Dom exposing (blur, Error)
 import Task exposing (attempt)
 import Tree.Core exposing (..)
 
@@ -20,15 +29,14 @@ type alias Model =
 
     -- There can at most ONE highlighed box at the same time
     , highlightedBox : Maybe Id
-    , precondition : Content
-    , postcondition : Content
-    , javaComments : String
+    , precondition : Condition
+    , postcondition : Condition
     }
 
 
 init : Model
 init =
-    { flowchartName = "Algorithm"
+    { flowchartName = ""
     , tree =
         { id = 0
         , basicTree =
@@ -41,9 +49,8 @@ init =
         }
     , currentId = 10
     , highlightedBox = Nothing
-    , precondition = ""
-    , postcondition = ""
-    , javaComments = ""
+    , precondition = { nodeType = PreConditionNode, content = "", visible = True }
+    , postcondition = { nodeType = PostConditionNode, content = "", visible = True }
     }
 
 
@@ -57,16 +64,24 @@ defaultModel =
     }
 
 
-unpackId : Maybe Id -> Id
-unpackId highlightedBox =
-    -- highlightedBox is used in comparisons with a nodes own Id. Translating "Nothing" to -1 ensures these comparisons will always come up false.
-    -- There's got to be a neater way to do this
-    case highlightedBox of
-        Just highlightedBoxId ->
-            highlightedBoxId
+modelToJava : Model -> String
+modelToJava model =
+    -- We need to replace '<' so the comments aren't parsed as HTML-tags
+    String.replace "<" "&lt;" <|
+        String.concat <|
+            List.intersperse "\n"
+                [ "/**"
+                , " * <P> Initial:" ++ conditionToJava model.precondition
+                , " * <P> Final:" ++ conditionToJava model.postcondition
+                , " */"
+                , "public void " ++ String.replace " " "_" model.flowchartName ++ "(){"
+                , treeToJava 1 model.tree ++ "}"
+                ]
 
-        Nothing ->
-            -1
+
+conditionToJava : Condition -> String
+conditionToJava condition =
+    String.replace "\n" "\n *       " condition.content
 
 
 
@@ -74,21 +89,26 @@ unpackId highlightedBox =
 
 
 type Msg
-    = UpdateContent Id Content
-    | FillEmpty FillEmpty Id
+    = UpdateName Content
+    | UpdateContent Id Content
+    | FillEmpty NodeType Id
     | ChangeTree ChangeTree Id
     | HighlightBox Id
     | DehighlightBox Id
     | KeyDown String Int
     | BlurResult (Result Error ())
-    | UpdateCondition ConditionType Content
+    | ConditionHide NodeType
+    | ConditionShow NodeType
 
 
-type FillEmpty
-    = AddStatement
-    | AddIf
-    | AddWhile
-    | AddForEach
+type NodeType
+    = StatementNode
+    | IfNode
+    | WhileNode
+    | ForEachNode
+    | PreConditionNode
+    | PostConditionNode
+    | FlowchartNameNode
 
 
 type ChangeTree
@@ -99,15 +119,32 @@ type ChangeTree
     | Delete
 
 
-type ConditionType
-    = Precondition
-    | Postcondition
+type alias Condition =
+    { nodeType : NodeType
+    , content : Content
+    , visible : Bool
+    }
+
+
+setConditionContent : Content -> Condition -> Condition
+setConditionContent newContent condition =
+    -- Elm does not allow struct-in-struct changes, so this function works as some syntactic sugar
+    { condition | content = newContent }
+
+
+setVisibleContent : Bool -> Condition -> Condition
+setVisibleContent bool condition =
+    { condition | visible = bool }
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        UpdateName newName ->
+            ( { model | flowchartName = newName }, Cmd.none )
+
         UpdateContent idToFind newContent ->
-            ( { model | tree = updateContent newContent idToFind model.tree }, Cmd.none )
+            ( updateContent newContent idToFind model, Cmd.none )
 
         FillEmpty newNodeType idToFind ->
             ( { model
@@ -147,6 +184,7 @@ update msg model =
                 , --Debug.log "Our dark magic is summoned upon!" <|
                   attempt BlurResult (blur domId)
                 )
+
             else
                 ( model, Cmd.none )
 
@@ -160,13 +198,37 @@ update msg model =
                     --Debug.log "Blur failed!"
                     ( model, Cmd.none )
 
-        UpdateCondition conditionType newText ->
-            case conditionType of
-                Precondition ->
-                    ( { model | precondition = newText }, Cmd.none )
+        ConditionHide nodeType ->
+            case nodeType of
+                PreConditionNode ->
+                    ( { model | precondition = setVisibleContent False model.precondition }
+                    , Cmd.none
+                    )
 
-                Postcondition ->
-                    ( { model | postcondition = newText }, Cmd.none )
+                PostConditionNode ->
+                    ( { model | postcondition = setVisibleContent False model.postcondition }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    --Debug.log "ConditionHide on non-condition type!"
+                    ( model, Cmd.none )
+
+        ConditionShow nodeType ->
+            case nodeType of
+                PreConditionNode ->
+                    ( { model | precondition = setVisibleContent True model.precondition }
+                    , Cmd.none
+                    )
+
+                PostConditionNode ->
+                    ( { model | postcondition = setVisibleContent True model.postcondition }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    --Debug.log "ConditionShow on non-condition type!"
+                    ( model, Cmd.none )
 
 
 
@@ -177,13 +239,13 @@ update msg model =
 --}
 
 
-updateContent : Content -> Id -> Tree -> Tree
-updateContent newContent idToFind node =
+updateContent : Content -> Id -> Model -> Model
+updateContent newContent idToFind model =
     let
         -- helper needs an argument, otherwise it gets pre-computed, which triggers
         --  the default case
-        helper antiBugNode =
-            case antiBugNode.basicTree of
+        helper node =
+            case node.basicTree of
                 Statement content child ->
                     Statement newContent child
 
@@ -197,12 +259,26 @@ updateContent newContent idToFind node =
                     ForEach newContent child1 child2
 
                 a ->
-                    Debug.log("Tried to update content of non-content node" ++ Debug.toString a ++ " With Id: " ++ String.fromInt node.id ++ " instead doing nothing.") Void
+                    Debug.log ("Tried to update content of non-content node" ++ Debug.toString a ++ " With Id: " ++ String.fromInt node.id ++ " instead doing nothing.") Void
+
+        treeRecursion node =
+            if node.id == idToFind then
+                { id = node.id, basicTree = helper node }
+
+            else
+                continueRecursion treeRecursion node
     in
-    if node.id == idToFind then
-        { id = node.id, basicTree = helper node }
+    if idToFind == 3 then
+        { model | flowchartName = newContent }
+
+    else if idToFind == 4 then
+        { model | precondition = setConditionContent newContent model.precondition }
+
+    else if idToFind == 5 then
+        { model | postcondition = setConditionContent newContent model.postcondition }
+
     else
-        continueRecursion (updateContent newContent idToFind) node
+        { model | tree = treeRecursion model.tree }
 
 
 
@@ -213,15 +289,15 @@ updateContent newContent idToFind node =
 --}
 
 
-fillEmpty : Id -> FillEmpty -> Id -> Tree -> Tree
+fillEmpty : Id -> NodeType -> Id -> Tree -> Tree
 fillEmpty currentId newNodeType idToFind node =
     let
         onTheRightEmptyNode child =
             case newNodeType of
-                AddStatement ->
+                StatementNode ->
                     Statement "" child
 
-                AddIf ->
+                IfNode ->
                     If ""
                         { id = currentId
                         , basicTree =
@@ -235,7 +311,7 @@ fillEmpty currentId newNodeType idToFind node =
                         }
                         child
 
-                AddWhile ->
+                WhileNode ->
                     While ""
                         { id = currentId
                         , basicTree =
@@ -246,7 +322,7 @@ fillEmpty currentId newNodeType idToFind node =
                         }
                         child
 
-                AddForEach ->
+                ForEachNode ->
                     ForEach ""
                         { id = currentId
                         , basicTree =
@@ -257,16 +333,20 @@ fillEmpty currentId newNodeType idToFind node =
                         }
                         child
 
+                _ ->
+                    Debug.log "Tried to instantiate a Precondition, Postcondition or FlowchartName in function 'fillEmpty'. Instantiated Void instead" Void
+
         helper currentNode =
             case currentNode of
                 Empty child ->
                     onTheRightEmptyNode child
 
                 a ->
-                  Debug.log ("Inserting something on non-Empty node " ++ Debug.toString a ++ " with id: " ++ String.fromInt node.id ++ " instead doing nothing.") currentNode
+                    Debug.log ("Inserting something on non-Empty node " ++ Debug.toString a ++ " with id: " ++ String.fromInt node.id ++ " instead doing nothing.") currentNode
     in
     if node.id == idToFind then
         { node | basicTree = helper node.basicTree }
+
     else
         continueRecursion
             (fillEmpty currentId newNodeType idToFind)
@@ -304,6 +384,7 @@ changeTree currentId operation idToFind node =
     in
     if node.id == idToFind then
         onTheRightNode node
+
     else
         continueRecursion (changeTree currentId operation idToFind) node
 
@@ -312,10 +393,10 @@ newAbove : Id -> Tree -> Tree
 newAbove currentId node =
     case node.basicTree of
         Start child ->
-            Debug.log ("Tried to add an element before Start. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") {id= -2, basicTree = Start child}
+            Debug.log ("Tried to add an element before Start. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") { id = -2, basicTree = Start child }
 
         Void ->
-            Debug.log ("Tried to add an element before Void. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") {id = -3, basicTree = Void}
+            Debug.log ("Tried to add an element before Void. Id: " ++ String.fromInt node.id ++ " instead doing nothing.") { id = -3, basicTree = Void }
 
         _ ->
             { id = currentId, basicTree = Empty node }
@@ -331,7 +412,7 @@ newBelow currentId currentNode =
                 }
 
         End ->
-            Debug.log  ("Tried to add an element below End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") End
+            Debug.log ("Tried to add an element below End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") End
 
         Empty child ->
             Empty
@@ -348,8 +429,20 @@ newBelow currentId currentNode =
                 , basicTree = Empty child
                 }
 
-        a ->
-            Debug.log  ("Tried to add an element below IfElse, While or ForEach. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") a
+        If content leftChild rightChild belowChild ->
+            If content
+                leftChild
+                rightChild
+                { id = currentId
+                , basicTree = Empty belowChild
+                }
+
+        While content innerChild belowChild ->
+            While content innerChild { id = currentId, basicTree = Empty belowChild }
+
+        ForEach content innerChild belowChild ->
+            ForEach content innerChild { id = currentId, basicTree = Empty belowChild }
+
 
 newTrue : Id -> Tree -> BasicTree
 newTrue currentId currentNode =
@@ -399,16 +492,16 @@ delete : Tree -> Tree
 delete currentNode =
     case currentNode.basicTree of
         Start child ->
-            Debug.log ("Tried to delete Start. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") {id = -2, basicTree = Start child}
+            Debug.log ("Tried to delete Start. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") { id = -2, basicTree = Start child }
 
         End ->
-            Debug.log ("Tried to delete End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") {id = -3, basicTree = End}
+            Debug.log ("Tried to delete End. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") { id = -3, basicTree = End }
 
         Empty child ->
             child
 
         Void ->
-            Debug.log ("Tried to delete Void. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") {id = -4, basicTree = Void}
+            Debug.log ("Tried to delete Void. Id: " ++ String.fromInt currentNode.id ++ " instead doing nothing.") { id = -4, basicTree = Void }
 
         Statement content child ->
             child
@@ -437,6 +530,7 @@ highlightBox newId currentId =
         Just id ->
             if newId == id then
                 Nothing
+
             else
                 Just newId
 
@@ -450,8 +544,9 @@ dehighlightBox oldId currentId =
         Just id ->
             if oldId == id then
                 Nothing
+
             else
                 Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ " while the highlightedBox was " ++ String.fromInt id) Nothing
 
         Nothing ->
-            Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ "while nothing was highlighted") Nothing
+            Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ " while nothing was highlighted") Nothing
