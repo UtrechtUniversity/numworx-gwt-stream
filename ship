@@ -1,7 +1,7 @@
 # compile without debugger
 # Note: we do not use --optimized, since the program would then lose its ability to give console information upon reaching invalid states
-elm make src/Main.elm --output=main.js &&
+elm make src/Main.elm --output=main.js
 # open it
-path=$(realpath Stream.html)
-url="file://$path"
-chromium-browser $url
+# path=$(realpath Stream.html)
+# url="file://$path"
+# chromium-browser $url

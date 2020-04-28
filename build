@@ -7,6 +7,6 @@
 # compile with debugger
 elm make src/Main.elm --output=main.js --debug &&
 # open it
-path=$(realpath Stream.html)
-url="file://$path"
-chromium-browser $url
+# path=$(realpath Stream.html)
+# url="file://$path"
+# chromium-browser --no-sandbox $url
