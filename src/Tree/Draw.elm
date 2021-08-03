@@ -187,7 +187,7 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                 , css
                     [ overflow auto
                     , resize Css.none
-                    , fontFamilies [ "monaco", "monofur", "monospace" ]
+                    , fontFamilies [ "lucida console", "monaco", "courier", "monospace" ]
                     , backgroundColor (Css.rgba 0 0 0 0)
                     , borderColor (Css.rgba 0 0 0 0)
                     , textAligning
