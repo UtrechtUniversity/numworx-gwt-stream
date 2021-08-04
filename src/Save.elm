@@ -45,7 +45,8 @@ update msg model =
             )
 
         DownloadJson ->
-            ( model, Download.string (model.flowchartName ++ ".flow") "application/flow" (toJson model) )
+            -- ( model, Download.string (model.flowchartName ++ ".flow") "application/flow" (toJson model) )
+              ( model, Download.string (model.flowchartName ++ ".jpg") "application/jpg" ( model) )
 
         UploadRequested ->
             ( model, Select.file [ "application/flow" ] UploadLoaded )
