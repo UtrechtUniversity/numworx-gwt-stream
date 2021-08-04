@@ -45,8 +45,7 @@ update msg model =
             )
 
         DownloadJson ->
-            -- ( model, Download.string (model.flowchartName ++ ".flow") "application/flow" (toJson model) )
-              ( model, Download.string (model.flowchartName ++ ".jpg") "application/jpg" ( model) )
+            ( model, Download.string (model.flowchartName ++ ".flow") "application/flow" (toJson model) )
 
         UploadRequested ->
             ( model, Select.file [ "application/flow" ] UploadLoaded )
@@ -115,6 +114,7 @@ view model =
         [ li listItemStyle [ copyJavaCommentsButton ]
         , li listItemStyle [ downloadButton model ]
         , li listItemStyle [ uploadButton ]
+        , li listItemStyle [text "Tip: take a screenshot! Windows:\"flag + shift + s\", Mac:\"cmd + shift + 4\""]
         ]
 
 
