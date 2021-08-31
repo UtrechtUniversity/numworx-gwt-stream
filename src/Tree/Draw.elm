@@ -106,7 +106,7 @@ labelText string =
         |> rendered
 
 
-multilineEditableTextBox : Id -> NodeType -> String -> Int -> Int -> Int -> ( Html Msg, Int, Int )
+multilineEditableTextBox : Id -> NodeType -> String -> Int -> Int -> Int -> ( Html Msg, Float, Float )
 multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidth =
     let
         characterWidth c =
@@ -198,7 +198,8 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                 ]
                 []
     in
-    ( htmlTextArea, w, h )
+    -- Offset the height so the bottom of the letters won't fall off
+    ( htmlTextArea, toFloat w, (toFloat h) + 0.15 )
 
 
 
@@ -324,7 +325,7 @@ statementBoxEditable id label =
             multilineEditableTextBox id StatementNode label minW minH maxWidth
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 13 )
+            ( max minW wta * 9, max minH hta * 13 )
 
         htmlBox =
             html ( w, h * 1.3 ) <|
@@ -369,7 +370,7 @@ ifBoxEditable id label =
             multilineEditableTextBox id IfNode label minW minH maxWidth
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 10 )
+            ( max minW wta * 9, max minH hta * 7.8 + 10 )
 
         htmlBox =
             html ( w, h * 2 ) <|
@@ -525,7 +526,7 @@ loopBoxEditable nodeType id label =
             multilineEditableTextBox id nodeType label minW minH maxCharacters
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 9, max minH (toFloat hta) * 7.8 + 5 )
+            ( max minW wta * 9, max minH hta * 7.8 + 5 )
 
         htmlBox =
             html ( w, h * 2 ) <|
@@ -963,7 +964,7 @@ noteBox id label =
             multilineEditableTextBox id nodeType label minW minH minW
 
         ( w, h ) =
-            ( max minW (toFloat wta) * 5, max minH (toFloat hta) * 7.8 + 15 )
+            ( max minW wta * 5, max minH hta * 7.8 + 15 )
 
         nodeType =
             if id == 4 then
