@@ -187,7 +187,7 @@ multilineEditableTextBox id nodeType content minBoxWidth minBoxHeight maxBoxWidt
                 , css
                     [ overflow auto
                     , resize Css.none
-                    , fontFamilies [  "courier", "monospace" ]
+                    -- , fontFamilies [  "courier", "monospace" ]
                     , backgroundColor (Css.rgba 0 0 0 0)
                     , borderColor (Css.rgba 0 0 0 0)
                     , textAligning
@@ -224,6 +224,7 @@ stubBox stubText =
 
         text =
             fromString stubText
+                -- |> typeface
                 |> rendered
     in
     [ text
