@@ -41,7 +41,7 @@ update msg model =
     case msg of
         GenerateJavaComments ->
             ( model
-            , downloadToast <| modelToJava model
+            , downloadToast <| toJson model
             )
 
         DownloadJson ->
@@ -114,7 +114,6 @@ view model =
         [ li listItemStyle [ copyJavaCommentsButton ]
         , li listItemStyle [ downloadButton model ]
         , li listItemStyle [ uploadButton ]
-        , li listItemStyle [text "Tip: take a screenshot! Windows:\"flag + shift + s\", Mac:\"cmd + shift + 4\""]
         ]
 
 
@@ -141,7 +140,7 @@ copyJavaCommentsButton : Html Msg
 copyJavaCommentsButton =
     button
         [ onClick GenerateJavaComments ]
-        [ text "Convert to Java comments" ]
+        [ text "Save to HTML" ]
 
 
 
@@ -195,7 +194,7 @@ toJson model =
 encodeEasterEgg : State.Model -> Encode.Value
 encodeEasterEgg model =
     Encode.object
-        [ ( "_Easter_Egg", Encode.string "Well done! You've opened the file in a texteditor! This is a JSON-file and it is used a lot throughout the internet to represent data. The best part is, is that it is quite humanreadable too! You can even edit the values right now and see how they've changed when you reupload the file. Don't forget to brag about your findings and have a nice day!" )
+        [ ( "_Easter_Egg", Encode.string "Nothing here" )
         , ( "model", encodeModel model )
         ]
 

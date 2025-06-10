@@ -49,8 +49,8 @@ init =
         }
     , currentId = 10
     , highlightedBox = Nothing
-    , precondition = { nodeType = PreConditionNode, content = "", visible = True }
-    , postcondition = { nodeType = PostConditionNode, content = "", visible = True }
+    , precondition = { nodeType = PreConditionNode, content = "", visible = False }
+    , postcondition = { nodeType = PostConditionNode, content = "", visible = False }
     }
 
 

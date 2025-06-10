@@ -23,6 +23,7 @@
   <script>
     var app = Elm.Main.init({
       node: document.getElementById('elm')
+
     });
 
     // <!--
@@ -45,7 +46,7 @@
         var textBlock = document.getElementById("textBlock")
 
         //modal.className = "show";
-        textToShow = "Your Java comments, please use ctrl+c to copy: \n" + javaComments
+        textToShow = javaComments
         textBlock.innerHTML = textToShow
 
         // When the user clicks the button, open the modal
@@ -65,10 +66,6 @@
 
         }
     );
-
-    window.onbeforeunload = function(){
-      return 'Are you sure you want to leave?';
-    };
 
   </script>
 
