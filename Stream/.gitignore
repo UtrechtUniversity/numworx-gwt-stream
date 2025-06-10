@@ -1,0 +1,14 @@
+# elm generated files
+elm-stuff/
+*.elmi
+*.elmo
+main.js
+repl-temp-*
+**/index.html
+*/build
+
+# Others
+*.7z
+*.zip
+/flowcharttool/testEnv/*
+/fiddle/*

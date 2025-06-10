@@ -1,0 +1,12 @@
+#!/bin/bash
+# Builds and opens my Elm project
+
+# Doing things in serial/parallel
+# https://unix.stackexchange.com/questions/63648/how-to-send-many-commands-to-shell-and-wait-for-the-command-behind-ends
+
+# compile with debugger
+elm make src/Main.elm --output=main.js --debug
+# open it
+# path=$(realpath Stream.html)
+# url="file://$path"
+# chromium-browser --no-sandbox $url
