@@ -14,16 +14,61 @@
     <!-- Modal content -->
     <div class="modal-content">
       <span class="close">&times;</span>
-      <pre id="textBlock"></pre>
+      <pre id="textBlock">{
+    "_Easter_Egg": "Nothing here",
+    "model": {
+        "flowchartName": "tweestappen ",
+        "tree": {
+            "id": 0,
+            "basicTree": {
+                "basicTreeType": "Start",
+                "child": {
+                    "id": 2,
+                    "basicTree": {
+                        "basicTreeType": "Statement",
+                        "content": "stap1",
+                        "child": {
+                            "id": 20,
+                            "basicTree": {
+                                "basicTreeType": "Statement",
+                                "content": "stap2",
+                                "child": {
+                                    "id": 1,
+                                    "basicTree": {
+                                        "basicTreeType": "End"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "currentId": 40,
+        "highlightedBox": "Nothing",
+        "precondition": {
+            "nodeType": "PreConditionNode",
+            "content": "empty",
+            "visible": true
+        },
+        "postcondition": {
+            "nodeType": "PostConditionNode",
+            "content": "empty too",
+            "visible": true
+        }
+    }
+}</pre>
     </div>
 
   </div>
-
+  <!-- enter model -->
   <div id="elm"></div>
   <script>
+    var elem = document.getElementById('textBlock')
+    var model = elem.textContent;
     var app = Elm.Main.init({
-      node: document.getElementById('elm')
-
+      node: document.getElementById('elm'),
+      flags: model
     });
 
     // <!--

@@ -17,7 +17,7 @@ import Tree.Draw as Draw exposing (..)
 import Tree.State as State exposing (..)
 
 
-main : Program () Model Msg
+main : Program String Model Msg
 main =
     Browser.element { init = init, view = view, update = update, subscriptions = subscriptions }
 
@@ -27,9 +27,18 @@ type alias Model =
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { state = State.init
+init : String -> ( Model, Cmd Msg )
+init model =
+    let
+        initModel = 
+            case Save.fromJson model of
+               Just newModel ->
+                   newModel
+
+               Nothing ->
+                   State.init
+    in
+    ( { state = initModel
       }
     , Cmd.none
     )
