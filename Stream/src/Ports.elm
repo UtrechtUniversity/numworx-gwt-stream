@@ -1,4 +1,4 @@
-port module Ports exposing (downloadToast)
+port module Ports exposing (downloadToast, checkpoint)
 
 {--
 
@@ -10,3 +10,4 @@ port module Ports exposing (downloadToast)
 
 
 port downloadToast : String -> Cmd msg
+port checkpoint : String -> Cmd msg

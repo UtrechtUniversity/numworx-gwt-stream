@@ -49,12 +49,12 @@
         "precondition": {
             "nodeType": "PreConditionNode",
             "content": "empty",
-            "visible": true
+            "visible": false
         },
         "postcondition": {
             "nodeType": "PostConditionNode",
             "content": "empty too",
-            "visible": true
+            "visible": false
         }
     }
 }</pre>
@@ -78,6 +78,8 @@
     // -->
 
     // Prompting a window displaying the flowchart in Java comments
+    app.ports.checkpoint.subscribe(function (data) { console.log(data); })
+
     app.ports.downloadToast.subscribe(function (javaComments) {
         //console.log("downloadModal is called, id=" + javaComments)
 

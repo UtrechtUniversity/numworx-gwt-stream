@@ -21,7 +21,7 @@ import Html.Styled.Attributes exposing (autofocus, class, css, href, id, multipl
 import Html.Styled.Events exposing (on, onClick, onInput)
 import Json.Decode as Decode exposing (..)
 import Json.Encode as Encode exposing (..)
-import Ports exposing (downloadToast)
+import Ports exposing (downloadToast, checkpoint)
 import Task exposing (perform)
 import Tree.Core as Tree exposing (..)
 import Tree.Draw exposing (treeWithConditions)
@@ -34,11 +34,17 @@ type Msg
     | UploadRequested
     | UploadLoaded File
     | UploadRead String
+    | Checkpoint
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Checkpoint ->
+            ( model
+            , checkpoint <| toJson model
+            )
+
         GenerateJavaComments ->
             ( model
             , downloadToast <| toJson model
@@ -467,7 +473,7 @@ conditionDecoder =
     Decode.map3 Condition
         (Decode.field "nodeType" <| nodeTypeDecoder)
         (Decode.field "content" <| Decode.string)
-        (Decode.field "visible" <| Decode.succeed True)
+        (Decode.field "visible" <| Decode.bool)
 
 
 nodeTypeDecoder : Decoder NodeType
