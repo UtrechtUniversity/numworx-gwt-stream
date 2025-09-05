@@ -31,7 +31,7 @@ init : String -> ( Model, Cmd Msg )
 init model =
     let
         initModel = 
-            case Save.fromJson model of
+            case State.fromJson model of
                Just newModel ->
                    newModel
 

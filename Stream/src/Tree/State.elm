@@ -1,4 +1,4 @@
-module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(..), defaultModel, init, modelToJava, update)
+module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(..), defaultModel, init, modelToJava, update, toJson, fromJson, treeDecoder)
 
 {--
 
@@ -16,10 +16,13 @@ module Tree.State exposing (ChangeTree(..), Condition, Model, Msg(..), NodeType(
 
 --}
 
-import Browser.Dom exposing (Error, blur)
+import Browser.Dom as Dom exposing (Error, blur)
 import Debug exposing (log)
 import Task exposing (attempt)
 import Tree.Core exposing (..)
+import Ports exposing (downloadToast, checkpoint)
+import Json.Decode as Decode exposing (..)
+import Json.Encode as Encode exposing (..)
 
 
 type alias Model =
@@ -96,9 +99,10 @@ type Msg
     | HighlightBox Id
     | DehighlightBox Id
     | KeyDown String Int
-    | BlurResult (Result Error ())
+    | BlurResult (Result Dom.Error ())
     | ConditionHide NodeType
     | ConditionShow NodeType
+    | Checkpoint
 
 
 type NodeType
@@ -140,11 +144,14 @@ setVisibleContent bool condition =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Checkpoint -> 
+            ( model, checkpoint <| toJson model) 
+    
         UpdateName newName ->
-            ( { model | flowchartName = newName }, Cmd.none )
+            update Checkpoint ({ model | flowchartName = newName})
 
         UpdateContent idToFind newContent ->
-            ( updateContent newContent idToFind model, Cmd.none )
+            ( updateContent newContent idToFind model, checkpoint <| toJson model )
 
         FillEmpty newNodeType idToFind ->
             ( { model
@@ -550,3 +557,334 @@ dehighlightBox oldId currentId =
 
         Nothing ->
             Debug.log ("!!!Dehighlighted box " ++ String.fromInt oldId ++ " while nothing was highlighted") Nothing
+
+            
+{--
+
+  Encoding a Model
+
+--}
+
+
+toJson : Model -> String
+toJson model =
+    model
+        |> encodeEasterEgg
+        |> Encode.encode 4
+
+
+
+-- Tiny little easter egg, for the smart kids
+
+
+encodeEasterEgg : Model -> Encode.Value
+encodeEasterEgg model =
+    Encode.object
+        [ ( "_Easter_Egg", Encode.string "Nothing here" )
+        , ( "model", encodeModel model )
+        ]
+
+
+encodeModel : Model -> Encode.Value
+encodeModel model =
+    Encode.object
+        [ ( "flowchartName", Encode.string model.flowchartName )
+        , ( "tree", encodeTree model.tree )
+        , ( "currentId", Encode.int model.currentId )
+        , ( "highlightedBox", Encode.string "Nothing" )
+        , ( "precondition", encodeCondition model.precondition )
+        , ( "postcondition", encodeCondition model.postcondition )
+        ]
+
+
+encodeTree : Tree -> Encode.Value
+encodeTree tree =
+    Encode.object
+        [ ( "id", Encode.int tree.id )
+        , ( "basicTree", encodeBasicTree tree.basicTree )
+        ]
+
+
+encodeBasicTree : BasicTree -> Encode.Value
+encodeBasicTree basicTree =
+    let
+        basicTreeCase =
+            case basicTree of
+                Start child ->
+                    [ ( "basicTreeType"
+                      , Encode.string "Start"
+                      )
+                    , ( "child"
+                      , encodeTree child
+                      )
+                    ]
+
+                End ->
+                    [ ( "basicTreeType"
+                      , Encode.string "End"
+                      )
+                    ]
+
+                Empty child ->
+                    [ ( "basicTreeType"
+                      , Encode.string "Empty"
+                      )
+                    , ( "child"
+                      , encodeTree child
+                      )
+                    ]
+
+                Void ->
+                    [ ( "basicTreeType"
+                      , Encode.string "Void"
+                      )
+                    ]
+
+                Statement content child ->
+                    [ ( "basicTreeType"
+                      , Encode.string "Statement"
+                      )
+                    , ( "content"
+                      , Encode.string content
+                      )
+                    , ( "child"
+                      , encodeTree child
+                      )
+                    ]
+
+                If content child1 child2 child3 ->
+                    [ ( "basicTreeType"
+                      , Encode.string "If"
+                      )
+                    , ( "content"
+                      , Encode.string content
+                      )
+                    , ( "child1"
+                      , encodeTree child1
+                      )
+                    , ( "child2"
+                      , encodeTree child2
+                      )
+                    , ( "child3"
+                      , encodeTree child3
+                      )
+                    ]
+
+                While content child1 child2 ->
+                    [ ( "basicTreeType"
+                      , Encode.string "While"
+                      )
+                    , ( "content"
+                      , Encode.string content
+                      )
+                    , ( "child1"
+                      , encodeTree child1
+                      )
+                    , ( "child2"
+                      , encodeTree child2
+                      )
+                    ]
+
+                ForEach content child1 child2 ->
+                    [ ( "basicTreeType"
+                      , Encode.string "ForEach"
+                      )
+                    , ( "content"
+                      , Encode.string content
+                      )
+                    , ( "child1"
+                      , encodeTree child1
+                      )
+                    , ( "child2"
+                      , encodeTree child2
+                      )
+                    ]
+    in
+    Encode.object basicTreeCase
+
+
+encodeCondition : Condition -> Encode.Value
+encodeCondition condition =
+    Encode.object
+        [ ( "nodeType", encodeNodeType condition.nodeType )
+        , ( "content", Encode.string condition.content )
+        , ( "visible", Encode.bool condition.visible )
+        ]
+
+
+encodeNodeType : NodeType -> Encode.Value
+encodeNodeType nodeType =
+    case nodeType of
+        StatementNode ->
+            Encode.string "StatementNode"
+
+        IfNode ->
+            Encode.string "IfNode"
+
+        WhileNode ->
+            Encode.string "WhileNode"
+
+        ForEachNode ->
+            Encode.string "ForEachNode"
+
+        PreConditionNode ->
+            Encode.string "PreConditionNode"
+
+        PostConditionNode ->
+            Encode.string "PostConditionNode"
+
+        FlowchartNameNode ->
+            Encode.string "FlowchartNameNode"
+
+
+
+{--
+
+  Decoding a Model
+
+--}
+
+
+fromJson : String -> Maybe Model
+fromJson json =
+    let
+        decodedResult =
+            Decode.decodeString easterEggDecoder json
+    in
+    case decodedResult of
+        Ok wrapper ->
+            Just <|
+                Debug.log
+                    "Decoded model without problems"
+                    wrapper.model
+
+        Err wrapper ->
+            Debug.log
+                ("Some decoding went wrong: "
+                    ++ Debug.toString wrapper
+                )
+                Nothing
+
+
+type alias EasterEgg =
+    { easterEgg : String
+    , model : Model
+    }
+
+
+easterEggDecoder : Decoder EasterEgg
+easterEggDecoder =
+    Decode.map2 EasterEgg
+        (Decode.field "_Easter_Egg" Decode.string)
+        (Decode.field "model" modelDecoder)
+
+
+modelDecoder : Decoder Model
+modelDecoder =
+    Decode.map6 Model
+        (Decode.field "flowchartName" Decode.string)
+        (Decode.field "tree" (lazy treeDecoder))
+        (Decode.field "currentId" Decode.int)
+        (Decode.field "highlightedBox" <| Decode.succeed Nothing)
+        (Decode.field "precondition" conditionDecoder)
+        (Decode.field "postcondition" conditionDecoder)
+
+
+treeDecoder : () -> Decoder Tree
+treeDecoder () =
+    Decode.map2 Tree
+        (Decode.field "id" Decode.int)
+        (Decode.field "basicTree" (lazy basicTreeDecoder))
+
+
+basicTreeDecoder : () -> Decoder BasicTree
+basicTreeDecoder () =
+    let
+        basicTreeInfo : String -> Decoder BasicTree
+        basicTreeInfo tag =
+            case Debug.log "Now decoding: " tag of
+                "Start" ->
+                    Decode.map Start
+                        (Decode.field "child" (lazy treeDecoder))
+
+                "End" ->
+                    Decode.succeed End
+
+                "Empty" ->
+                    Decode.map Empty
+                        (Decode.field "child" (lazy treeDecoder))
+
+                "Void" ->
+                    Decode.succeed Void
+
+                "Statement" ->
+                    Decode.map2 Statement
+                        (Decode.field "content" Decode.string)
+                        (Decode.field "child" (lazy treeDecoder))
+
+                "If" ->
+                    Decode.map4 If
+                        (Decode.field "content" Decode.string)
+                        (Decode.field "child1" (lazy treeDecoder))
+                        (Decode.field "child2" (lazy treeDecoder))
+                        (Decode.field "child3" (lazy treeDecoder))
+
+                "While" ->
+                    Decode.map3 While
+                        (Decode.field "content" Decode.string)
+                        (Decode.field "child1" (lazy treeDecoder))
+                        (Decode.field "child2" (lazy treeDecoder))
+
+                "ForEach" ->
+                    Decode.map3 ForEach
+                        (Decode.field "content" Decode.string)
+                        (Decode.field "child1" (lazy treeDecoder))
+                        (Decode.field "child2" (lazy treeDecoder))
+
+                a ->
+                    Decode.fail <| "Unknown basicTree: " ++ a
+    in
+    Decode.field "basicTreeType" Decode.string
+        |> andThen basicTreeInfo
+
+
+conditionDecoder : Decoder Condition
+conditionDecoder =
+    Decode.map3 Condition
+        (Decode.field "nodeType" <| nodeTypeDecoder)
+        (Decode.field "content" <| Decode.string)
+        (Decode.field "visible" <| Decode.bool)
+
+
+nodeTypeDecoder : Decoder NodeType
+nodeTypeDecoder =
+    Decode.string
+        |> Decode.andThen
+            (\string ->
+                case string of
+                    "StatementNode" ->
+                        Decode.succeed StatementNode
+
+                    "IfNode" ->
+                        Decode.succeed IfNode
+
+                    "WhileNode" ->
+                        Decode.succeed WhileNode
+
+                    "ForEachNode" ->
+                        Decode.succeed ForEachNode
+
+                    "PreConditionNode" ->
+                        Decode.succeed PreConditionNode
+
+                    "PostConditionNode" ->
+                        Decode.succeed PostConditionNode
+
+                    "FlowchartNameNode" ->
+                        Decode.succeed FlowchartNameNode
+
+                    _ ->
+                        Decode.fail "Invalid NodeType"
+            )
+            
+            
