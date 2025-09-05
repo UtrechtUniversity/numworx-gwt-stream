@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>nl.numworx.stream</groupId>
+  <artifactId>StreamGWT</artifactId>
+  <packaging>war</packaging>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Stream for GWT</name>
+
+  <properties>
+    <!-- Convenience property to set the GWT version -->
+    <gwt.version>2.10.0</gwt.version>
+    <gwt.style>PRETTY</gwt.style>
+    <!-- GWT 2.9 support 8, 9 and 11 -->
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <debug>StreamGWT</debug>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt</artifactId>
+        <version>${gwt.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-user</artifactId>
+        <version>${gwt.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.gwt</groupId>
+      <artifactId>gwt-dev</artifactId>
+        <version>${gwt.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency>
+		<dependency>
+			<groupId>nl.uu.fi.dwo.mobile</groupId>
+			<artifactId>interaction</artifactId>
+			<version>0.1.13</version>
+		</dependency>
+		<dependency>
+			<groupId>nl.uu.fi.dwo.mobile</groupId>
+			<artifactId>interaction</artifactId>
+			<version>0.1.13</version>
+			<classifier>sources</classifier>
+		</dependency>
+  </dependencies>
+
+  <build>
+  	<finalName>${project.artifactId}</finalName>
+    <!-- Output classes directly into the webapp, so that IDEs and "mvn process-classes" update them in DevMode -->
+    <outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>
+
+    <plugins>
+      <plugin>
+        <artifactId>maven-war-plugin</artifactId>
+        <configuration>
+            <warSourceDirectory>${basedir}/src/main/webapp</warSourceDirectory>
+         	<webXml>${basedir}/src/main/webapp/WEB-INF/web.xml</webXml>
+       		<warSourceExcludes>META-INF/</warSourceExcludes>
+        </configuration>
+      </plugin>
+
+      <!-- Mojo's Maven Plugin for GWT -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>gwt-maven-plugin</artifactId>
+        <version>2.9.0</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <!-- Plugin configuration. There are many available options, see
+          gwt-maven-plugin documentation at codehaus.org -->
+        <configuration>
+          <runTarget>StreamGWT.html</runTarget>
+          <style>${gwt.style}</style>
+          <modules>
+            <module>nl.numworx.streamgwt.${debug}</module>
+          </modules>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <profiles>
+  	<profile>
+  		<id>debug</id>
+  		<properties>
+  			<debug>StreamGWTDebug</debug>
+  			<gwt.style>PRETTY</gwt.style>
+  		</properties>
+  	</profile>
+  
+  </profiles>
+</project>
