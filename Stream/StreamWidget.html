@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+	<title>Stream widget</title>
+	<script src="scripts/SCORM_2004_APIWrapper.js" type="text/javascript" ></script>
+	<script src="main.js" type="text/javascript" ></script>
+	<link rel="stylesheet" href="Stream.css">
+	<script>
+		var flow;
+		function loading() {
+			flow = doGetValue("flowchart");
+			console.log(flow);
+    			var app = Elm.Main.init({ node: document.getElementById('elm'), flags: flow });
+    			app.ports.checkpoint.subscribe(function (data) { flow = data; doSetValue('flowchart', data); });
+		}
+		function exiting() {
+			console.log("exiting");
+			doSetValue("flowchart", flow);
+			doTerminate();
+		}
+	</script>
+</head>
+<body onload="loading()" onunload="exiting()">
+<div id='elm' ></div>
+</body>
+</html>
+
+

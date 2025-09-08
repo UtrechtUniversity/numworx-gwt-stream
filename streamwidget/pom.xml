@@ -4,10 +4,41 @@
 	<artifactId>stream</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>Stream Widget</name>
+	<parent>
+        <groupId>nl.uu.fi.dwo</groupId>
+        <artifactId>DWO</artifactId>
+        <version>2.5.44</version>
+	</parent>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.test.skip>true</maven.test.skip>
+		<proguard.lib>${java.home}/lib/rt.jar</proguard.lib>
+		<jxb>7.28.1</jxb>
+		<maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
+		<osgi.qualifier>${maven.build.timestamp}</osgi.qualifier>
+	</properties>
 	<build>
 		<finalName>${project.artifactId}</finalName>
 	</build>
 	<dependencies>
+		<dependency>
+			<groupId>org.c-book</groupId>
+			<artifactId>cbookif</artifactId>
+			<version>1.0.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.c-book</groupId>
+			<artifactId>cbookeditor</artifactId>
+			<version>0.0.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>fi.beans</groupId>
+			<artifactId>numworxlf</artifactId>
+			<version>2.5.4</version>
+			<scope>provided</scope>
+		</dependency>
 	 	<dependency>
 	  		<groupId>fi.wiskopdr</groupId>
 	  		<artifactId>wiskopdr</artifactId>
@@ -20,6 +51,44 @@
 	  		<version>2.5.44</version>
 	  		<scope>provided</scope>
 	  	</dependency>
+  	<dependency>
+  		<groupId>com.teamdev.jxbrowser</groupId>
+  		<artifactId>jxbrowser-swing</artifactId>
+  		<version>${jxb}</version>
+  		<scope>runtime</scope>
+  	</dependency>
+  	<dependency>
+  		<groupId>com.teamdev.jxbrowser</groupId>
+  		<artifactId>jxbrowser-cross-platform</artifactId>
+  		<version>${jxb}</version>
+ 	    <type>pom</type>
+ 	    <scope>runtime</scope>
+  	</dependency>
+		<dependency>
+			<groupId>nl.numworx.swingbrowser</groupId>
+			<artifactId>swingbrowser-jxb</artifactId>
+			<scope>runtime</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>com.teamdev.jxbrowser</groupId>
+					<artifactId>jxbrowser-cross-platform</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>nl.numworx.swingbrowser</groupId>
+			<artifactId>swingbrowser-api</artifactId>
+		</dependency>
 		
 	</dependencies>
+    <repositories>	
+		<repository>
+		  <id>com.teamdev</id>
+		  <url>https://europe-maven.pkg.dev/jxbrowser/releases</url>
+		</repository>
+ 		<repository>
+		  <id>repos</id>
+		  <url>https://repos.dwo.nl/artifactory/repos</url>
+		</repository>
+    </repositories>
 </project>

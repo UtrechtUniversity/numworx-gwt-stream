@@ -1,0 +1,44 @@
+{
+    "_Easter_Egg": "Nothing here",
+    "model": {
+        "flowchartName": "tweestappen ",
+        "tree": {
+            "id": 0,
+            "basicTree": {
+                "basicTreeType": "Start",
+                "child": {
+                    "id": 2,
+                    "basicTree": {
+                        "basicTreeType": "Statement",
+                        "content": "stap1",
+                        "child": {
+                            "id": 20,
+                            "basicTree": {
+                                "basicTreeType": "Statement",
+                                "content": "stap2",
+                                "child": {
+                                    "id": 1,
+                                    "basicTree": {
+                                        "basicTreeType": "End"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "currentId": 40,
+        "highlightedBox": "Nothing",
+        "precondition": {
+            "nodeType": "PreConditionNode",
+            "content": "empty",
+            "visible": false
+        },
+        "postcondition": {
+            "nodeType": "PostConditionNode",
+            "content": "empty too",
+            "visible": false
+        }
+    }
+}
