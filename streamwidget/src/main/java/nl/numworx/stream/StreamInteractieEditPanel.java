@@ -51,6 +51,9 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		east.add(save);
 		add(east, BorderLayout.EAST);
 		scroll.setViewportView(browser.getBrowserPanel());
+		JPanel south = new JPanel();
+		south.add(new JLabel("Mede mogelijk gemaakt door Frank Gerlings"));
+		add(south, BorderLayout.SOUTH);
 	}
 
 	@Override
