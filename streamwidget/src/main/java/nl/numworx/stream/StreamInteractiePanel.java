@@ -146,6 +146,7 @@ public class StreamInteractiePanel extends JPanel implements InteractiePanel, CB
 
 	@Override
 	public void zetOpdracht(Hashtable arg0, String[] arg1, Hashtable arg2) {
+	  setLaunchData(arg0, arg2);
 	}
 
 	@Override

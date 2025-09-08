@@ -32,7 +32,7 @@ public class Stream extends JApplet implements WiskOpdrApplet, CBookWidgetIF {
 		}
 	}
 	
-	private URI base = URI.create("http://localhost:8082/apps/"); // ergens uit een context halen.
+	private URI base = URI.create("https://cdn.dwo.nl/apps/"); // ergens uit een context halen.
 	private String flow = "";
 	
 	URI getBase() {
@@ -44,6 +44,8 @@ public class Stream extends JApplet implements WiskOpdrApplet, CBookWidgetIF {
 
 	@Override
 	public InteractiePanel getInteractiePanel() {
+		String apps = getParameter("appUrlPath");
+		if (apps != null) base = URI.create(apps);
 		return new StreamInteractiePanel(this);
 	}
 

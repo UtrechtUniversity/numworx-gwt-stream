@@ -4,6 +4,7 @@
 	<artifactId>stream</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<name>Stream Widget</name>
+	<packaging>bundle</packaging>
 	<parent>
         <groupId>nl.uu.fi.dwo</groupId>
         <artifactId>DWO</artifactId>
@@ -19,6 +20,23 @@
 	</properties>
 	<build>
 		<finalName>${project.artifactId}</finalName>
+    <plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>3.5.0</version>
+				<extensions>true</extensions>
+				<configuration>
+					<niceManifest>true</niceManifest>
+					<instructions>
+   						<_snapshot>${osgi.qualifier}</_snapshot>
+						<Bundle-SymbolicName>nl.numworx.stream.Stream</Bundle-SymbolicName>
+						<Export-Package>nl.numworx.stream</Export-Package>
+						<Main-class>nl.numworx.stream.Stream</Main-class>
+					</instructions>
+				</configuration>
+			</plugin>
+    </plugins>
 	</build>
 	<dependencies>
 		<dependency>
@@ -36,7 +54,6 @@
 		<dependency>
 			<groupId>fi.beans</groupId>
 			<artifactId>numworxlf</artifactId>
-			<version>2.5.4</version>
 			<scope>provided</scope>
 		</dependency>
 	 	<dependency>
@@ -48,7 +65,6 @@
 		<dependency>
 	  		<groupId>nl.uu.fi.dwo</groupId>
 	  		<artifactId>DWO-commons-lib</artifactId>
-	  		<version>2.5.44</version>
 	  		<scope>provided</scope>
 	  	</dependency>
   	<dependency>
