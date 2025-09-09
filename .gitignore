@@ -7,3 +7,5 @@ repl-temp-*
 .classpath
 .settings
 target/
+StreamGWT/src/main/webapp/Stream.css
+StreamGWT/src/main/webapp/main.js

@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <link type="text/css" rel="stylesheet" href="Stream.css">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>StreamGWT</title>
+	<script type="text/javascript" src="main.js" ></script>
+	<script>
+		function install(flow, consumer) {
+            var app = Elm.Main.init({ node: document.getElementById('elm'), flags: flow });
+            consumer(flow);
+            app.ports.checkpoint.subscribe(
+            		function(data) {
+            			consumer(data)
+            		}
+            		);
+		}	
+		function tickle() { }
+		
+	</script>
+
+    <script type="text/javascript" language="javascript" src="streamgwt/streamgwt.nocache.js"></script>
+
+  </head>
+
+  <body>
+	<div id='elm' ></div>
+  </body>
+</html>

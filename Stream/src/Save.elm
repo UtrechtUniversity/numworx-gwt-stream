@@ -1,4 +1,4 @@
-module Save exposing (Msg(..), copyJavaCommentsButton, debug, downloadButton, update, uploadButton, view)
+module Save exposing (Msg(..),  debug,  update)
 
 {--
 
@@ -93,7 +93,7 @@ unorderdListStyle =
         , position fixed
         , left (px 0)
         , bottom (px 0)
-        , height (px 50)
+        , height (px 0)
         , width (pct 100)
         ]
     ]
@@ -117,9 +117,7 @@ listItemStyle =
 view : Model -> Html Msg
 view model =
     ul unorderdListStyle
-        [ li listItemStyle [ copyJavaCommentsButton ]
-        , li listItemStyle [ downloadButton model ]
-        , li listItemStyle [ uploadButton ]
+        [ 
         ]
 
 
@@ -127,14 +125,14 @@ downloadButton : Model -> Html Msg
 downloadButton model =
     button
         [ onClick DownloadJson ]
-        [ text "Download" ]
+        [ text "Dummy" ]
 
 
 uploadButton : Html Msg
 uploadButton =
     button
         [ onClick UploadRequested ]
-        [ text "Upload" ]
+        [ text "Dummy" ]
 
 
 fileReader : File -> Cmd Msg

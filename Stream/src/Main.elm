@@ -82,7 +82,7 @@ view model =
         treeLayout =
             css
                 [ position relative
-                , paddingBottom (px 50)
+                , paddingBottom (px 0)
                 , zIndex (int 0)
                 ]
     in
@@ -95,9 +95,8 @@ view model =
                 , zIndex (int -1)
                 ]
             ]
-            [ map Save
-                (Save.view model.state)
-            , map Tree
+            [ 
+              map Tree
                 (Draw.treeWithConditions model.state [ treeLayout ])
             ]
 
