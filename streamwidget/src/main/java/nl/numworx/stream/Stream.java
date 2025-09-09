@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.Locale;
+import java.util.ResourceBundle;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -30,13 +31,23 @@ public class Stream extends JApplet implements WiskOpdrApplet, CBookWidgetIF {
 		} catch (Exception oops) {
 			
 		}
+		rb = ResourceBundle.getBundle("nl.numworx.stream.text.Text", locale);
+	}
+	
+	public Stream() {
+		this(Locale.getDefault());
 	}
 	
 	private URI base = URI.create("https://cdn.dwo.nl/apps/"); // ergens uit een context halen.
 	private String flow = "";
+	private ResourceBundle rb;
 	
 	URI getBase() {
 		return base;
+	}
+	
+	String getString(String key) {
+		return rb.getString(key);
 	}
 	String getDefaultFlow() {
 		return flow;
@@ -51,7 +62,12 @@ public class Stream extends JApplet implements WiskOpdrApplet, CBookWidgetIF {
 
 	@Override
 	public CBookWidgetEditIF getEditor(CBookContext context) {
+		setBase(context);
 		return new StreamInteractieEditPanel(this);
+	}
+
+	private void setBase(CBookContext context) {
+		base = URI.create("http://localhost:8082/apps/"); // context is testing 
 	}
 
 	@Override
@@ -64,6 +80,7 @@ public class Stream extends JApplet implements WiskOpdrApplet, CBookWidgetIF {
 
 	@Override
 	public CBookWidgetInstanceIF getInstance(CBookContext context) {
+		setBase(context);
 		return new StreamInteractiePanel(this);
 	}
 
