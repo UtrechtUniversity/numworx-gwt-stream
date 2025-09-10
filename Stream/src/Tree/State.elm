@@ -151,39 +151,31 @@ update msg model =
             update Checkpoint ({ model | flowchartName = newName})
 
         UpdateContent idToFind newContent ->
-            ( updateContent newContent idToFind model, checkpoint <| toJson model )
+            update Checkpoint ( updateContent newContent idToFind model )
 
         FillEmpty newNodeType idToFind ->
-            ( { model
+            update Checkpoint ( { model
                 | tree = fillEmpty model.currentId newNodeType idToFind model.tree
                 , currentId = model.currentId + 10
 
                 -- 4 is the max number of new nodes created, 10 denotes a "generation"
-              }
-            , Cmd.none
-            )
+              })
 
         ChangeTree operation id ->
-            ( { model
+            update Checkpoint ( { model
                 | tree = changeTree model.currentId operation id model.tree
                 , currentId = model.currentId + 10
-              }
-            , Cmd.none
-            )
+              })
 
         HighlightBox idHitbox ->
-            ( { model
+            update Checkpoint ( { model
                 | highlightedBox = highlightBox idHitbox model.highlightedBox
-              }
-            , Cmd.none
-            )
+              })
 
         DehighlightBox idHitbox ->
-            ( { model
+            update Checkpoint ( { model
                 | highlightedBox = dehighlightBox idHitbox model.highlightedBox
-              }
-            , Cmd.none
-            )
+              })
 
         KeyDown domId key ->
             if key == 13 then
@@ -208,14 +200,10 @@ update msg model =
         ConditionHide nodeType ->
             case nodeType of
                 PreConditionNode ->
-                    ( { model | precondition = setVisibleContent False model.precondition }
-                    , Cmd.none
-                    )
+                    update Checkpoint ( { model | precondition = setVisibleContent False model.precondition })
 
                 PostConditionNode ->
-                    ( { model | postcondition = setVisibleContent False model.postcondition }
-                    , Cmd.none
-                    )
+                    update Checkpoint ( { model | postcondition = setVisibleContent False model.postcondition })
 
                 _ ->
                     --Debug.log "ConditionHide on non-condition type!"
@@ -224,14 +212,10 @@ update msg model =
         ConditionShow nodeType ->
             case nodeType of
                 PreConditionNode ->
-                    ( { model | precondition = setVisibleContent True model.precondition }
-                    , Cmd.none
-                    )
+                    update Checkpoint ( { model | precondition = setVisibleContent True model.precondition })
 
                 PostConditionNode ->
-                    ( { model | postcondition = setVisibleContent True model.postcondition }
-                    , Cmd.none
-                    )
+                    update Checkpoint ( { model | postcondition = setVisibleContent True model.postcondition })
 
                 _ ->
                     --Debug.log "ConditionShow on non-condition type!"

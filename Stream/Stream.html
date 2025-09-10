@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Stream</title>
   <script src="main.js"></script>
-  <link rel="stylesheet" href="Stream.css">
+  <link rel="stylesheet" href="war/Stream.css">
 </head>
 
 <body>
@@ -65,6 +65,7 @@
   <div id="elm"></div>
   <script>
     var elem = document.getElementById('textBlock')
+    var ctr = 1
     var model = elem.textContent;
     var app = Elm.Main.init({
       node: document.getElementById('elm'),
@@ -78,7 +79,9 @@
     // -->
 
     // Prompting a window displaying the flowchart in Java comments
-    app.ports.checkpoint.subscribe(function (data) { console.log(data); })
+    app.ports.checkpoint.subscribe(function (data) { 
+	//console.log(data); 
+	console.log( ctr++ )})
 
     app.ports.downloadToast.subscribe(function (javaComments) {
         //console.log("downloadModal is called, id=" + javaComments)
