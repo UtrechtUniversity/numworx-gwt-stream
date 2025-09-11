@@ -32,6 +32,7 @@
         </plugin>
         <plugin>
         	<artifactId>maven-war-plugin</artifactId>
+        	<version>3.2.3</version>
         	<configuration>
 					<warSourceDirectory>war</warSourceDirectory>
 					<failOnMissingWebXml>false</failOnMissingWebXml>        		
