@@ -187,6 +187,7 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 
 	@Override
 	public void setLaunchData(Map<String, ?> map) {
+		stop();
 		if (map == null) map = new Hashtable<String, Object>();
 		launchData = map;
 		if (map.containsKey(SCORE_MAX)) {
@@ -194,6 +195,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		} else {
 			maxScore.setValue(0);
 		}
+		browser.waitTerminate();
+		start();
  	}
 
 	JFileChooser chooser;
