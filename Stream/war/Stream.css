@@ -1,7 +1,9 @@
 body {
 	background: transparent !important;
 }
-
+div#outer.readonly div {
+	pointer-events: none;
+}
 
 /* The Modal (background) */
 .modal {

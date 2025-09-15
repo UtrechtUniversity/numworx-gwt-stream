@@ -5,6 +5,8 @@ import java.util.Map;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.NodeList;
 import com.google.gwt.dom.client.Style;
 import com.google.gwt.event.logical.shared.ResizeEvent;
 import com.google.gwt.event.logical.shared.ResizeHandler;
@@ -18,6 +20,7 @@ import nl.uu.fi.dwo.interaction.client.InteractionStub;
 import nl.uu.fi.dwo.interaction.client.JSONUtilities;
 import nl.uu.fi.dwo.interaction.client.OpdrNavIF;
 import nl.uu.fi.dwo.interaction.client.Stub;
+import nl.uu.fi.dwo.interaction.client.event.CBookEvent;
 import nl.uu.fi.dwo.interaction.client.json.ObjectMap;
 
 public class StreamGWT extends Composite implements EntryPoint, InteractionStub, ResizeHandler {
@@ -35,6 +38,9 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 	int height;
 	private int width0;
 	private int height0;
+	private boolean pastHoogteAan;
+	private int heightSVG;
+	private OpdrNavIF comRoot;
 	
 	public StreamGWT() {
 		InlineHTML html = new InlineHTML("<!-- Stream GWT -->");
@@ -63,8 +69,35 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 				flow = map.getString(FLOW);
 			}
 		}
-		install(flow, (data) -> { flow = data; });
+		install(flow, (data) -> { 
+			flow = data;
+			if (pastHoogteAan) pasAanH(data);
+		});
+		if (pastHoogteAan) 
+			pasAanH(flow);
 	}
+
+	private void pasAanH(String data) {
+		Element elem = RootPanel.get("outer").getElement();
+		NodeList<Element> list = elem.getElementsByTagName("svg");
+		if (list.getLength() > 0) {
+			elem = list.getItem(0);
+			try {
+				String h = height(elem);
+				heightSVG = Double.valueOf(h).intValue()+1;
+			} catch(Exception oops) {
+			}
+		}
+		if (heightSVG > height0 && heightSVG != height) {
+			HashMap h = new HashMap();
+			h.put("height", heightSVG);			
+			comRoot.fireEvent(new CBookEvent(this, "resize", h));
+		}
+	}
+
+	private native static String height(Element elem) /*-{
+		return elem.height.baseVal.valueAsString;
+	}-*/;
 
 	@Override
 	public int getScore() {
@@ -91,6 +124,7 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 
 	@Override
 	public void setCommunicationRoot(OpdrNavIF comRoot) {
+		this.comRoot = comRoot;
 	}
 
 	@Override
@@ -126,10 +160,15 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 	@Override
 	public void init(int width, int height, Map<String, Object> launchData, Map<String, Number> values) {
 		this.width0 = this.width = width;
-		this.height0 = this.height = height;
+		this.heightSVG = this.height0 = this.height = height;
 		ObjectMap map = JSONUtilities.wrapMap(launchData);
 		if (map.containsKey(FLOW))
 			flow = map.getString(FLOW);
+		boolean readonly = map.getBoolean("readonly", false);
+		RootPanel.get("outer").setStyleName("readonly", readonly);
+		pastHoogteAan = map.getBoolean("pasAanH", false);
+		
+		
 	}
 
 	@Override
