@@ -25,7 +25,9 @@ import javax.swing.filechooser.FileFilter;
 
 import org.cbook.cbookif.CBookWidgetEditIF;
 
+import fi.beans.numworxlf.Constants;
 import fi.beans.numworxlf.JButton;
+import fi.beans.numworxlf.JCheckBox;
 import fi.beans.numworxlf.JFileChooser;
 import fi.beans.numworxlf.JFormattedTextField;
 import fi.beans.numworxlf.JLabel;
@@ -35,6 +37,8 @@ import fi.beans.wiskopdrbeans.InteractieEditPanel;
 @SuppressWarnings({ "rawtypes", "serial" })
 public class StreamInteractieEditPanel extends JPanel implements InteractieEditPanel, CBookWidgetEditIF, ActionListener {
 
+	private static final String READONLY = "readonly";
+	private static final String PAS_AAN_H = "pasAanH";
 	private static final String SCORE_MAX = "scoreMax";
 	int instanceWidth = 600, instanceHeight = 400;
 	private Map<String, ?> launchData  = Collections.emptyMap();
@@ -44,6 +48,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 	Box east;
 	JButton open, save;
 	JFormattedTextField maxScore;
+	JCheckBox readonlyCB, pastHoogteAanCB;
+	
 	
 	StreamInteractieEditPanel(Stream stream) {
 		super(new BorderLayout());
@@ -69,10 +75,24 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		east.add(label);
 		east.add(Box.createVerticalStrut(10));
 		label = new JLabel(stream.getString("maxScore"));
+		label.setForeground(Constants.colorBlue1); // de default?
 		Box max = Box.createHorizontalBox();
 		max.add(label); max.add(maxScore);
 		max.setAlignmentX(0);
 		east.add(max);
+
+		east.add(Box.createVerticalStrut(20));
+		label = new JLabel(stream.getString("options")); label.setFont(new Font("sansserif", Font.BOLD, 18));
+		label.setAlignmentX(0);
+		east.add(label);
+		east.add(Box.createVerticalStrut(10));
+		readonlyCB = new JCheckBox(stream.getString(READONLY));
+		readonlyCB.setAlignmentX(0);
+		east.add(readonlyCB);
+		pastHoogteAanCB = new JCheckBox(stream.getString("pastHoogteAan"));
+		pastHoogteAanCB.setAlignmentX(0);
+		east.add(pastHoogteAanCB);
+
 		east.add(Box.createVerticalStrut(20));
 		label = new JLabel(stream.getString("flows")); label.setFont(new Font("sansserif", Font.BOLD, 18));
 		label.setAlignmentX(0);
@@ -96,11 +116,13 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 
 	@Override
 	public Hashtable getEditState() {
-		Hashtable state = new Hashtable();
+		Hashtable<String,Object> state = new Hashtable<>();
 		String flow = browser.getFlow();
 		if (flow != null) state.put(StreamInteractiePanel.FLOW, flow);
 		state.put(SCORE_MAX, getMaxScore());
 		state.put("checkDocent", getMaxScore()>0);
+		state.put(READONLY, readonlyCB.isSelected());
+		state.put(PAS_AAN_H, pastHoogteAanCB.isSelected());
 		launchData = state;
 		return state;
 	}
@@ -195,6 +217,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		} else {
 			maxScore.setValue(0);
 		}
+		pastHoogteAanCB.setSelected(Boolean.TRUE.equals(map.get(PAS_AAN_H)));
+		readonlyCB.setSelected(Boolean.TRUE.equals(map.get(READONLY)));		
 		browser.waitTerminate();
 		start();
  	}
