@@ -22,7 +22,7 @@
 		  	</execution>
 		  </executions>
           <configuration>
-            <executable>elm</executable>
+            <executable>${LOCALBIN}elm</executable>
             <arguments>
               <argument>make</argument>
               <argument>src/Main.elm</argument>
@@ -42,4 +42,7 @@
   	
   
   </build>
+  <properties>
+  	<LOCALBIN>/usr/local/bin/</LOCALBIN>
+  </properties>
 </project>
