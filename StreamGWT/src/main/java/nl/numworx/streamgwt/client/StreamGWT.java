@@ -4,6 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style;
+import com.google.gwt.event.logical.shared.ResizeEvent;
+import com.google.gwt.event.logical.shared.ResizeHandler;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -15,7 +20,7 @@ import nl.uu.fi.dwo.interaction.client.OpdrNavIF;
 import nl.uu.fi.dwo.interaction.client.Stub;
 import nl.uu.fi.dwo.interaction.client.json.ObjectMap;
 
-public class StreamGWT extends Composite implements EntryPoint, InteractionStub {
+public class StreamGWT extends Composite implements EntryPoint, InteractionStub, ResizeHandler {
 
 	protected static final String FLOW = "flowchart";
 	
@@ -28,6 +33,8 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub 
 	String flow = "";
 	int width;
 	int height;
+	private int width0;
+	private int height0;
 	
 	public StreamGWT() {
 		InlineHTML html = new InlineHTML("<!-- Stream GWT -->");
@@ -37,6 +44,7 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub 
 	@Override
 	public void onModuleLoad() {
 		RootPanel.get().add(this);
+		Window.addResizeHandler(this);
 		Stub.publish(this);
 	}
 
@@ -87,8 +95,7 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub 
 
 	@Override
 	public void zetVolledigeBreedte(int breedte) {
-		// TODO Auto-generated method stub
-		
+		GWT.log("zet vol breedte " + breedte);
 	}
 
 	@Override
@@ -118,11 +125,27 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub 
 
 	@Override
 	public void init(int width, int height, Map<String, Object> launchData, Map<String, Number> values) {
-		this.width = width;
-		this.height = height;
+		this.width0 = this.width = width;
+		this.height0 = this.height = height;
 		ObjectMap map = JSONUtilities.wrapMap(launchData);
 		if (map.containsKey(FLOW))
 			flow = map.getString(FLOW);
+	}
+
+	@Override
+	public void onResize(ResizeEvent event) {
+		int w = event.getWidth();
+		int h = event.getHeight();
+		if (h == 0 || w == 0) return; // false alarm
+		if (h == height && w == width) return; // no change
+		// pas aan h:
+		int h1 = height0 * w / width0;
+		GWT.log("h1 = " + h1 + " h= " + h);
+		double zoom = w / (double) width0;
+		RootPanel.get("outer").getElement().getStyle().setProperty("zoom", Double.toString(zoom));
+		width = w;
+		height = h;
+		
 	}
 
 }
