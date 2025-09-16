@@ -10,7 +10,7 @@
 
   <properties>
     <!-- Convenience property to set the GWT version -->
-    <gwt.version>2.9.0</gwt.version> <!-- fixed to 2.9.0 otherwise CORS errors in localdev -->
+    <gwt.version>2.10.0</gwt.version> <!-- fixed to 2.9.0 otherwise CORS errors in localdev -->
     <gwt.style>PRETTY</gwt.style>
     <!-- GWT 2.9 support 8, 9 and 11 -->
     <maven.compiler.source>1.8</maven.compiler.source>
