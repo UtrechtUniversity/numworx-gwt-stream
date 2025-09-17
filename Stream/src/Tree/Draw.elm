@@ -902,7 +902,7 @@ addSeparateBelowPlus model node nodeBox =
 flowchartNameBox : String -> Collage Msg
 flowchartNameBox flowchartName =
     let
-        -- TODO rewrtie to allow multiple lines
+        -- TODO rewrite to allow multiple lines
         htmlInputField =
             input
                 [ autofocus True
@@ -1065,6 +1065,7 @@ addConditions model tree =
                 |> align right
             )
         |> connect [ ( "Start", Layout.left ), ( "flowchartNameBox", Layout.right ) ] (dash verythin (uniform black))
+                |> name "flowchartNameConnect"
         |> align right
         |> addPrecondition model.precondition.visible
         |> addPostcondition model.postcondition.visible

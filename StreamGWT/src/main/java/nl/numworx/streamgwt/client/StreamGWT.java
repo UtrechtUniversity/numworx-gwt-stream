@@ -165,9 +165,11 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 		if (map.containsKey(FLOW))
 			flow = map.getString(FLOW);
 		boolean readonly = map.getBoolean("readonly", false);
-		RootPanel.get("outer").setStyleName("readonly", readonly);
+		RootPanel outer = RootPanel.get("outer");
+		outer.setStyleName("readonly", readonly);
 		pastHoogteAan = map.getBoolean("pasAanH", false);
-		
+		boolean notitle = map.getBoolean("noTitle", false);
+		outer.setStyleName("noname", notitle);
 		
 	}
 

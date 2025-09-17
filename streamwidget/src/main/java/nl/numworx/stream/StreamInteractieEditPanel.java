@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -40,6 +41,7 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 	private static final String READONLY = "readonly";
 	private static final String PAS_AAN_H = "pasAanH";
 	private static final String SCORE_MAX = "scoreMax";
+	private static final String NO_TITLE = "noTitle";
 	int instanceWidth = 600, instanceHeight = 400;
 	private Map<String, ?> launchData  = Collections.emptyMap();
 	private final Stream parent;
@@ -48,7 +50,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 	Box east;
 	JButton open, save;
 	JFormattedTextField maxScore;
-	JCheckBox readonlyCB, pastHoogteAanCB;
+	JCheckBox readonlyCB, pastHoogteAanCB,noTitleCB;
+	private String  noname = "";
 	
 	
 	StreamInteractieEditPanel(Stream stream) {
@@ -92,6 +95,9 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		pastHoogteAanCB = new JCheckBox(stream.getString("pastHoogteAan"));
 		pastHoogteAanCB.setAlignmentX(0);
 		east.add(pastHoogteAanCB);
+		noTitleCB = new JCheckBox(stream.getString("geenTitel"));
+		noTitleCB.setAlignmentX(0);
+		east.add(noTitleCB);
 
 		east.add(Box.createVerticalStrut(20));
 		label = new JLabel(stream.getString("flows")); label.setFont(new Font("sansserif", Font.BOLD, 18));
@@ -112,6 +118,7 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		add(label, BorderLayout.SOUTH);
 		open.addActionListener(this);
 		save.addActionListener(this);
+		noTitleCB.addItemListener(this::listenNoTitle);
 	}
 
 	@Override
@@ -123,6 +130,7 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		state.put("checkDocent", getMaxScore()>0);
 		state.put(READONLY, readonlyCB.isSelected());
 		state.put(PAS_AAN_H, pastHoogteAanCB.isSelected());
+		state.put(NO_TITLE, noTitleCB.isSelected());
 		launchData = state;
 		return state;
 	}
@@ -140,7 +148,7 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 	}
 
 	private void loadStreamWidget() {
-		browser.loadURL(parent.getBase().resolve("StreamWidget.html").toString());
+		browser.loadURL(parent.getBase().resolve("StreamWidget.html" + noname).toString());
 	}
 
 	@Override
@@ -149,6 +157,14 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 
 	}
 
+	private void startNoName() {
+		noname = noTitleCB.isSelected() ? "#noname": "";
+		stop();
+		browser.waitTerminate();
+		loadStreamWidget();
+	}
+	
+	
 	@Override
 	public void zetBreedte(int w) {
 		setInstanceWidth(w);
@@ -218,7 +234,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 			maxScore.setValue(0);
 		}
 		pastHoogteAanCB.setSelected(Boolean.TRUE.equals(map.get(PAS_AAN_H)));
-		readonlyCB.setSelected(Boolean.TRUE.equals(map.get(READONLY)));		
+		readonlyCB.setSelected(Boolean.TRUE.equals(map.get(READONLY)));
+		noTitleCB.setSelected(Boolean.TRUE.equals(map.get(NO_TITLE)));
 		browser.waitTerminate();
 		start();
  	}
@@ -283,5 +300,10 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 			}
 		}
 	}
+
+	private void listenNoTitle(ItemEvent itemevent1) {
+		startNoName();
+	}
+
 
 }

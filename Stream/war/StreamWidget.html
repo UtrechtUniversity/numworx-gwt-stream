@@ -9,8 +9,13 @@
 		var flow;
 		function loading() {
 			flow = doGetValue("flowchart");
+			var elm = document.getElementById('elm');
+			console.log("HASH = " + location.hash);
+			if (location.hash)
+				document.getElementById('outer').className = location.hash.substring(1);
+			
 			console.log(flow);
-    			var app = Elm.Main.init({ node: document.getElementById('elm'), flags: flow });
+    			var app = Elm.Main.init({ node: elm, flags: flow });
     			app.ports.checkpoint.subscribe(function (data) { flow = data; doSetValue('flowchart', data); });
 		}
 		function exiting() {
@@ -20,7 +25,7 @@
 		}
 	</script>
 </head>
-<body onload="loading()" onunload="exiting()">
+<body onload="loading()" onunload="exiting()" id='outer'>
 <div id='elm' ></div>
 </body>
 </html>

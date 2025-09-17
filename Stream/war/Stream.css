@@ -4,6 +4,12 @@ body {
 div#outer.readonly div {
 	pointer-events: none;
 }
+.noname #flowchartNameBox, 
+.noname #flowchartNameConnect > polyline:first-of-type {
+  	display:none;
+}
+
+
 
 /* The Modal (background) */
 .modal {

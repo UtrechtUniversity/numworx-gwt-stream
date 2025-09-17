@@ -192,8 +192,10 @@ public class StreamInteractiePanel extends JPanel implements InteractiePanel, CB
 		browser.loadURL(null);
 		browser.waitTerminate();
 		String flow = Objects.toString(launchdata.get(FLOW), parent.getDefaultFlow());
+		boolean noTitle = Boolean.TRUE.equals(launchdata.get("noTitle"));
+		String noname = noTitle ? "#noname": "";
 		browser.setFlow(flow);
-		browser.loadURL(parent.getBase().resolve("StreamWidget.html").toString());
+		browser.loadURL(parent.getBase().resolve("StreamWidget.html" + noname).toString());
 		
 	}
 
