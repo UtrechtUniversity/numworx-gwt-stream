@@ -42,6 +42,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 	private static final String PAS_AAN_H = "pasAanH";
 	private static final String SCORE_MAX = "scoreMax";
 	private static final String NO_TITLE = "noTitle";
+	private static final String WIDTH = "width";
+	private static final String HAS_WIDTH = "hasWidth";
 	int instanceWidth = 600, instanceHeight = 400;
 	private Map<String, ?> launchData  = Collections.emptyMap();
 	private final Stream parent;
@@ -49,8 +51,8 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 	JScrollPane scroll;
 	Box east;
 	JButton open, save;
-	JFormattedTextField maxScore;
-	JCheckBox readonlyCB, pastHoogteAanCB,noTitleCB;
+	JFormattedTextField maxScore, widgetWidth;
+	JCheckBox readonlyCB, pastHoogteAanCB,noTitleCB, widthCB;
 	private String  noname = "";
 	
 	
@@ -98,7 +100,19 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		noTitleCB = new JCheckBox(stream.getString("geenTitel"));
 		noTitleCB.setAlignmentX(0);
 		east.add(noTitleCB);
-
+		Box widthBox = Box.createHorizontalBox();
+		widthCB = new JCheckBox(stream.getString("widgetWidth"));
+		widthBox.add(widthCB);
+		widgetWidth = new JFormattedTextField();
+		widgetWidth.setColumns(5);
+		widgetWidth.setValue(instanceWidth);
+		widgetWidth.setMaximumSize(widgetWidth.getPreferredSize());
+		widthBox.add(widgetWidth);
+		widthBox.setAlignmentX(LEFT_ALIGNMENT);
+		east.add(widthBox);
+		
+		
+		
 		east.add(Box.createVerticalStrut(20));
 		label = new JLabel(stream.getString("flows")); label.setFont(new Font("sansserif", Font.BOLD, 18));
 		label.setAlignmentX(0);
@@ -119,6 +133,7 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		open.addActionListener(this);
 		save.addActionListener(this);
 		noTitleCB.addItemListener(this::listenNoTitle);
+		widthCB.addItemListener(this::listenWidth);
 	}
 
 	@Override
@@ -131,8 +146,14 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		state.put(READONLY, readonlyCB.isSelected());
 		state.put(PAS_AAN_H, pastHoogteAanCB.isSelected());
 		state.put(NO_TITLE, noTitleCB.isSelected());
+		state.put(WIDTH, getWidgetWidth());
+		state.put(HAS_WIDTH, widthCB.isSelected());
 		launchData = state;
 		return state;
+	}
+
+	private int getWidgetWidth() {
+		return ((Number) widgetWidth.getValue()).intValue();
 	}
 
 	@Override
@@ -233,6 +254,13 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		} else {
 			maxScore.setValue(0);
 		}
+		if (map.containsKey(WIDTH)) 
+			widgetWidth.setValue(map.get(WIDTH));
+		else {
+			widgetWidth.setValue(instanceWidth);
+		}
+		widthCB.setSelected(Boolean.TRUE.equals(map.get(HAS_WIDTH)));
+		widgetWidth.setVisible(widthCB.isSelected());
 		pastHoogteAanCB.setSelected(Boolean.TRUE.equals(map.get(PAS_AAN_H)));
 		readonlyCB.setSelected(Boolean.TRUE.equals(map.get(READONLY)));
 		noTitleCB.setSelected(Boolean.TRUE.equals(map.get(NO_TITLE)));
@@ -305,5 +333,10 @@ public class StreamInteractieEditPanel extends JPanel implements InteractieEditP
 		startNoName();
 	}
 
+	private void listenWidth(ItemEvent ev) {
+		widgetWidth.setVisible(ev.getStateChange() == ItemEvent.SELECTED);
+		widgetWidth.invalidate();
+		validate();
+	}
 
 }

@@ -38,7 +38,7 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 	int height;
 	private int width0;
 	private int height0;
-	private boolean pastHoogteAan;
+	private boolean pastHoogteAan, hasWidth;
 	private int heightSVG;
 	private OpdrNavIF comRoot;
 	
@@ -73,10 +73,34 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 			flow = data;
 			if (pastHoogteAan) pasAanH(data);
 		});
+		if (!hasWidth) {
+			width0 = svgWidth().intValue();
+		}
+		double zoom = width / (double) width0;
+		RootPanel.get("outer").getElement().getStyle().setProperty("zoom", Double.toString(zoom));
+
+		
 		if (pastHoogteAan) 
 			pasAanH(flow);
+		else {
+			
+		}
 	}
 
+	private Number svgWidth() {
+		Element elem = RootPanel.get("outer").getElement();
+		NodeList<Element> list = elem.getElementsByTagName("svg");
+		if (list.getLength() > 0) {
+			elem = list.getItem(0);
+			try {
+				String w = width(elem);
+				return Double.valueOf(w);
+			} catch(Exception oops) { }
+		}
+		return width0;
+	}
+	
+	
 	private void pasAanH(String data) {
 		Element elem = RootPanel.get("outer").getElement();
 		NodeList<Element> list = elem.getElementsByTagName("svg");
@@ -88,15 +112,20 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 			} catch(Exception oops) {
 			}
 		}
-		if (heightSVG > height0 && heightSVG != height) {
+		int zoomed = (heightSVG * width + width0-1) / width0;
+		if (zoomed > height0 && zoomed != height) {
 			HashMap h = new HashMap();
-			h.put("height", heightSVG);			
+			h.put("height", zoomed);			// houd rekening met zoom.
 			comRoot.fireEvent(new CBookEvent(this, "resize", h));
 		}
 	}
 
 	private native static String height(Element elem) /*-{
 		return elem.height.baseVal.valueAsString;
+	}-*/;
+
+	private native static String width(Element elem) /*-{
+	return elem.width.baseVal.valueAsString;
 	}-*/;
 
 	@Override
@@ -170,6 +199,10 @@ public class StreamGWT extends Composite implements EntryPoint, InteractionStub,
 		pastHoogteAan = map.getBoolean("pasAanH", false);
 		boolean notitle = map.getBoolean("noTitle", false);
 		outer.setStyleName("noname", notitle);
+		hasWidth = map.getBoolean("hasWidth", false);
+		if (hasWidth) {
+			width0 = map.getInt("width");
+		}
 		
 	}
 
