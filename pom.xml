@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>nl.uu.fi.dwo</groupId>
-        <artifactId>DWO.master.pom</artifactId>
-        <version>1.1</version>
+	<groupId>nl.uu.fi.dwo</groupId>
+        <artifactId>dwo</artifactId>
+        <version>2.5.47</version>
     </parent>
   <groupId>nl.numworx.stream</groupId>
   <artifactId>parent</artifactId>
@@ -18,4 +18,16 @@
   <scm>
         <developerConnection>scm:git:git@github.com:UtrechtUniversity/numworx-gwt-stream.git</developerConnection>
   </scm>
+  <distributionManagement>
+	    <repository>
+	      <id>github</id>
+	      <name>GitHub Packages</name>
+	      <url>https://maven.pkg.github.com/UtrechtUniversity/numworx-gwt-stream</url>
+	    </repository>
+        <snapshotRepository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/UtrechtUniversity/numworx-gwt-stream</url>
+        </snapshotRepository>
+  </distributionManagement>
 </project> 
