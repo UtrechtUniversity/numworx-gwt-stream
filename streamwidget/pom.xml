@@ -101,9 +101,12 @@
 		  <id>com.teamdev</id>
 		  <url>https://europe-maven.pkg.dev/jxbrowser/releases</url>
 		</repository>
- 		<repository>
-		  <id>repos</id>
-		  <url>https://repos.dwo.nl/artifactory/repos</url>
-		</repository>
+                <repository>
+                     <id>numworx-dwo-author</id>
+                     <snapshots>
+                        <enabled>true</enabled>
+                     </snapshots>
+                     <url>https://maven.pkg.github.com/UtrechtUniversity/numworx-dwo-author</url>
+                 </repository>
     </repositories>
 </project>
