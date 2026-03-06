@@ -59,7 +59,7 @@
 			<dependency>
 				<groupId>fi.wiskopdr.beans</groupId>
 				<artifactId>wiskopdrbeans</artifactId>
-				<version>1.0.3-SNAPSHOT</version>
+				<version>${authorVersion}</version>
 			</dependency>
 		<dependency>
 	  		<groupId>nl.uu.fi.dwo</groupId>
