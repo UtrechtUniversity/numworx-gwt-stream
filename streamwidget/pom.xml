@@ -54,12 +54,12 @@
 			<artifactId>numworxlf</artifactId>
 			<scope>provided</scope>
 		</dependency>
-	 	<dependency>
-	  		<groupId>fi.wiskopdr.beans</groupId>
-	  		<artifactId>wiskopdrbeans</artifactId>
-	  		<version>2.5.48</version>
-	  		<scope>provided</scope>
-	  	</dependency>
+			<dependency>
+				<groupId>fi.wiskopdr.beans</groupId>
+				<artifactId>wiskopdrbeans</artifactId>
+				<version>${authorVersion}</version>
+				<scope>provided</scope>
+			</dependency>
 		<dependency>
 	  		<groupId>nl.uu.fi.dwo</groupId>
 	  		<artifactId>dwo-commons-lib</artifactId>
@@ -100,5 +100,12 @@
 		  <id>com.teamdev</id>
 		  <url>https://europe-maven.pkg.dev/jxbrowser/releases</url>
 		</repository>
+                <repository>
+                     <id>numworx-dwo-author</id>
+                     <snapshots>
+                        <enabled>true</enabled>
+                     </snapshots>
+                     <url>https://maven.pkg.github.com/UtrechtUniversity/numworx-dwo-author</url>
+                 </repository>
     </repositories>
 </project>

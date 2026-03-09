@@ -12,6 +12,7 @@
   <name>parent pom for GWT widgets</name>
   <properties>
 	<dwoVersion>2.5.48</dwoVersion>
+	<authorVersion>2.5.48</authorVersion>
   </properties>
   <modules>
      <module>streamwidget</module>
@@ -21,4 +22,16 @@
   <scm>
         <developerConnection>scm:git:git@github.com:UtrechtUniversity/numworx-gwt-stream.git</developerConnection>
   </scm>
+  <distributionManagement>
+	    <repository>
+	      <id>github</id>
+	      <name>GitHub Packages</name>
+	      <url>https://maven.pkg.github.com/UtrechtUniversity/numworx-gwt-stream</url>
+	    </repository>
+        <snapshotRepository>
+          <id>github</id>
+          <name>GitHub Packages</name>
+          <url>https://maven.pkg.github.com/UtrechtUniversity/numworx-gwt-stream</url>
+        </snapshotRepository>
+  </distributionManagement>
 </project> 
