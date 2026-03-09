@@ -1,15 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>nl.numworx.stream</groupId>
 	<artifactId>stream</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
 	<name>Stream Widget</name>
 	<packaging>bundle</packaging>
 	<parent>
-        <groupId>nl.uu.fi.dwo</groupId>
-        <artifactId>DWO</artifactId>
-        <version>2.5.45-SNAPSHOT</version>
-        <relativePath></relativePath>
+	  <groupId>nl.numworx.stream</groupId>
+	  <artifactId>parent</artifactId>
+	  <version>1.0.0-SNAPSHOT</version>
 	</parent>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -58,14 +55,14 @@
 			<scope>provided</scope>
 		</dependency>
 	 	<dependency>
-	  		<groupId>fi.wiskopdr</groupId>
-	  		<artifactId>wiskopdr</artifactId>
-	  		<version>0.3.0</version>
+	  		<groupId>fi.wiskopdr.beans</groupId>
+	  		<artifactId>wiskopdrbeans</artifactId>
+	  		<version>2.5.48</version>
 	  		<scope>provided</scope>
 	  	</dependency>
 		<dependency>
 	  		<groupId>nl.uu.fi.dwo</groupId>
-	  		<artifactId>DWO-commons-lib</artifactId>
+	  		<artifactId>dwo-commons-lib</artifactId>
 	  		<scope>provided</scope>
 	  	</dependency>
   	<dependency>
@@ -102,10 +99,6 @@
 		<repository>
 		  <id>com.teamdev</id>
 		  <url>https://europe-maven.pkg.dev/jxbrowser/releases</url>
-		</repository>
- 		<repository>
-		  <id>repos</id>
-		  <url>https://repos.dwo.nl/artifactory/repos</url>
 		</repository>
     </repositories>
 </project>
