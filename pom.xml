@@ -3,7 +3,7 @@
     <parent>
         <groupId>nl.uu.fi.dwo</groupId>
         <artifactId>dwo</artifactId>
-        <version>2.5.48</version>
+        <version>2.5.50</version>
     </parent>
   <groupId>nl.numworx.stream</groupId>
   <artifactId>parent</artifactId>
@@ -11,8 +11,8 @@
   <packaging>pom</packaging>
   <name>parent pom for GWT widgets</name>
   <properties>
-	<dwoVersion>2.5.48</dwoVersion>
-	<authorVersion>2.5.48</authorVersion>
+	<dwoVersion>2.5.50</dwoVersion>
+	<authorVersion>2.5.50</authorVersion>
   </properties>
   <modules>
      <module>streamwidget</module>
